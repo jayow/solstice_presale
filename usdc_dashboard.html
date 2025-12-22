@@ -689,7 +689,10 @@
     </div>
 
     <script>
-        const API_BASE = 'http://localhost:5000/api';
+        // Use relative path for Vercel deployment, fallback to localhost for development
+        const API_BASE = window.location.hostname === 'localhost' 
+            ? 'http://localhost:5000/api' 
+            : '/api';
         const TARGET_AMOUNT = 4000000; // $4M target
         let totalAmount = 0;
         let totalTransactions = 0;

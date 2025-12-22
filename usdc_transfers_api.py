@@ -1,5 +1,6 @@
 from flask import Flask, jsonify, send_from_directory, send_file, request
 from flask_cors import CORS
+import atexit
 import requests
 import json
 from datetime import datetime, timezone
@@ -33,12 +34,20 @@ DB_CONFIG = {
 
 # Connection pool
 db_pool = None
+db_initialized = False
 
 # Backfill status
 backfill_complete = False
 backfill_in_progress = False
 
 def init_database():
+    """Initialize database connection pool and create tables"""
+    global db_pool, db_initialized
+    
+    if db_initialized and db_pool:
+        return
+    
+    try:
     """Initialize database connection pool and create tables"""
     global db_pool
     
@@ -84,6 +93,7 @@ def init_database():
             
             conn.commit()
             cur.close()
+            db_initialized = True
             print("✓ Database initialized successfully")
         finally:
             db_pool.putconn(conn)
@@ -91,6 +101,7 @@ def init_database():
     except Exception as e:
         print(f"✗ Database initialization error: {e}")
         print("Make sure PostgreSQL is running and credentials are correct")
+        db_initialized = False
         raise
 
 
@@ -320,15 +331,47 @@ def extract_usdc_transfers(transaction: Dict) -> List[Dict]:
     return transfers
 
 
+# Initialize database on first request (for Vercel serverless)
+# Note: @before_first_request is deprecated in Flask 2.2+, using alternative approach
+def ensure_db_initialized():
+    """Ensure database is initialized before handling requests"""
+    if not db_initialized:
+        try:
+            init_database()
+        except Exception as e:
+            print(f"Warning: Database initialization failed: {e}")
+            raise
+
+# Cleanup function for connection pool
+def cleanup_db_pool():
+    """Close all database connections on exit"""
+    global db_pool
+    if db_pool:
+        db_pool.closeall()
+        print("Database connection pool closed")
+
+atexit.register(cleanup_db_pool)
+
 @app.route('/')
 def index():
     """Serve the frontend HTML"""
+    # Ensure database is initialized
+    try:
+        ensure_db_initialized()
+    except Exception as e:
+        return f"Database initialization error: {e}", 500
     return send_file('usdc_dashboard.html')
 
 
 @app.route('/api/new-transfers')
 def get_new_transfers():
     """Get only new USDC transfers since last check"""
+    # Ensure database is initialized
+    try:
+        ensure_db_initialized()
+    except Exception as e:
+        return jsonify({"error": f"Database initialization failed: {e}"}), 500
+    
     # Get seen signatures from database
     seen_signatures = get_seen_signatures_from_db()
     
@@ -392,6 +435,12 @@ def get_new_transfers():
 @app.route('/api/stats')
 def get_stats():
     """Get total statistics from database"""
+    # Ensure database is initialized
+    try:
+        ensure_db_initialized()
+    except Exception as e:
+        return jsonify({"error": f"Database initialization failed: {e}"}), 500
+    
     stats = get_stats_from_db()
     return jsonify({
         "total_amount": stats["total_amount"],
@@ -504,6 +553,12 @@ def backfill_status():
 @app.route('/api/transfers')
 def get_transfers():
     """Get transfers with pagination and filtering"""
+    # Ensure database is initialized
+    try:
+        ensure_db_initialized()
+    except Exception as e:
+        return jsonify({"error": f"Database initialization failed: {e}"}), 500
+    
     try:
         limit = int(request.args.get('limit', 100))
         offset = int(request.args.get('offset', 0))
