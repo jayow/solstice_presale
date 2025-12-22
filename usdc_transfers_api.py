@@ -24,13 +24,29 @@ USDC_MINT = "EPjFWdd5AufqSSqeM2qN1xzybapC8G4wEGGkZwyTDt1v"
 PRESALE_START_TIMESTAMP = int(datetime(2025, 12, 22, 13, 0, 0, tzinfo=timezone.utc).timestamp())  # 2025-12-22 13:00:00 UTC
 
 # Database configuration
-DB_CONFIG = {
-    'host': os.getenv('DB_HOST', 'localhost'),
-    'port': os.getenv('DB_PORT', '5432'),
-    'database': os.getenv('DB_NAME', 'usdc_transfers'),
-    'user': os.getenv('DB_USER', 'postgres'),
-    'password': os.getenv('DB_PASSWORD', 'postgres')
-}
+# Support both connection string (Vercel Postgres) and individual credentials
+POSTGRES_URL = os.getenv('POSTGRES_URL') or os.getenv('POSTGRES_URL_NON_POOLING')
+
+if POSTGRES_URL:
+    # Use connection string (Vercel Postgres, Neon, Supabase, etc.)
+    import urllib.parse
+    parsed = urllib.parse.urlparse(POSTGRES_URL)
+    DB_CONFIG = {
+        'host': parsed.hostname,
+        'port': parsed.port or 5432,
+        'database': parsed.path.lstrip('/'),
+        'user': parsed.username,
+        'password': parsed.password
+    }
+else:
+    # Use individual environment variables
+    DB_CONFIG = {
+        'host': os.getenv('DB_HOST', 'localhost'),
+        'port': os.getenv('DB_PORT', '5432'),
+        'database': os.getenv('DB_NAME', 'usdc_transfers'),
+        'user': os.getenv('DB_USER', 'postgres'),
+        'password': os.getenv('DB_PASSWORD', 'postgres')
+    }
 
 # Connection pool
 db_pool = None
