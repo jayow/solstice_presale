@@ -12,12 +12,8 @@
       "dest": "api/index.py"
     },
     {
-      "src": "/(.*\\.(html|css|js|png|jpg|jpeg|gif|svg|ico))",
-      "dest": "/$1"
-    },
-    {
-      "src": "/",
-      "dest": "/usdc_dashboard.html"
+      "src": "/(.*)",
+      "dest": "api/index.py"
     }
   ]
 }
