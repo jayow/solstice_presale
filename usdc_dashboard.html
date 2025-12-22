@@ -1,0 +1,1183 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Solstice Presale</title>
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        body {
+            font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Oxygen, Ubuntu, Cantarell, sans-serif;
+            background: #0a0e27;
+            background-image: 
+                radial-gradient(circle at 20% 50%, rgba(102, 126, 234, 0.1) 0%, transparent 50%),
+                radial-gradient(circle at 80% 80%, rgba(118, 75, 162, 0.1) 0%, transparent 50%);
+            min-height: 100vh;
+            padding: 0;
+            color: #ffffff;
+            margin: 0;
+        }
+
+        .container {
+            max-width: 1400px;
+            margin: 0 auto;
+        }
+
+        .header {
+            background: rgba(15, 23, 42, 0.8);
+            backdrop-filter: blur(10px);
+            border: 1px solid rgba(255, 255, 255, 0.1);
+            border-radius: 20px;
+            padding: 40px;
+            margin: 20px;
+            margin-bottom: 20px;
+            box-shadow: 0 20px 60px rgba(0, 0, 0, 0.5);
+        }
+
+        .header h1 {
+            background: linear-gradient(135deg, #ff6b35 0%, #f7931e 50%, #ff6b35 100%);
+            -webkit-background-clip: text;
+            -webkit-text-fill-color: transparent;
+            background-clip: text;
+            margin-bottom: 15px;
+            font-size: 3em;
+            font-weight: 800;
+            letter-spacing: -1px;
+        }
+
+        .program-info {
+            color: rgba(255, 255, 255, 0.7);
+            font-size: 0.9em;
+            margin-bottom: 20px;
+            word-break: break-all;
+            font-family: 'Courier New', monospace;
+        }
+
+        .stats-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(250px, 1fr));
+            gap: 20px;
+            margin-top: 20px;
+        }
+
+        .stat-card {
+            background: rgba(15, 23, 42, 0.6);
+            backdrop-filter: blur(10px);
+            border: 1px solid rgba(255, 107, 53, 0.2);
+            color: white;
+            padding: 30px;
+            border-radius: 16px;
+            box-shadow: 0 10px 30px rgba(0, 0, 0, 0.3);
+            transition: all 0.3s ease;
+        }
+
+        .stat-card:hover {
+            border-color: rgba(255, 107, 53, 0.5);
+            transform: translateY(-5px);
+            box-shadow: 0 15px 40px rgba(255, 107, 53, 0.2);
+        }
+
+        .stat-card h3 {
+            font-size: 0.85em;
+            color: rgba(255, 255, 255, 0.7);
+            margin-bottom: 12px;
+            text-transform: uppercase;
+            letter-spacing: 2px;
+            font-weight: 600;
+        }
+
+        .stat-card .value {
+            font-size: 2.8em;
+            font-weight: 800;
+            margin-bottom: 8px;
+            background: linear-gradient(135deg, #ff6b35 0%, #f7931e 100%);
+            -webkit-background-clip: text;
+            -webkit-text-fill-color: transparent;
+            background-clip: text;
+        }
+
+        .stat-card .subtitle {
+            font-size: 0.85em;
+            color: rgba(255, 255, 255, 0.6);
+        }
+
+        .progress-card {
+            background: rgba(15, 23, 42, 0.8);
+            backdrop-filter: blur(10px);
+            border: 1px solid rgba(255, 107, 53, 0.3);
+            border-radius: 20px;
+            padding: 40px;
+            margin: 20px;
+            margin-bottom: 20px;
+            box-shadow: 0 20px 60px rgba(0, 0, 0, 0.5);
+        }
+
+        .progress-header {
+            display: flex;
+            justify-content: space-between;
+            align-items: baseline;
+            margin-bottom: 20px;
+        }
+
+        .progress-title {
+            font-size: 1.2em;
+            color: rgba(255, 255, 255, 0.9);
+            font-weight: 600;
+            text-transform: uppercase;
+            letter-spacing: 1px;
+        }
+
+        .progress-amount {
+            font-size: 2.5em;
+            font-weight: 800;
+            background: linear-gradient(135deg, #ff6b35 0%, #f7931e 100%);
+            -webkit-background-clip: text;
+            -webkit-text-fill-color: transparent;
+            background-clip: text;
+        }
+
+        .progress-percentage {
+            font-size: 3em;
+            font-weight: 800;
+            background: linear-gradient(135deg, #ff6b35 0%, #f7931e 100%);
+            -webkit-background-clip: text;
+            -webkit-text-fill-color: transparent;
+            background-clip: text;
+            margin-bottom: 10px;
+        }
+
+        .progress-bar-container {
+            width: 100%;
+            height: 40px;
+            background: rgba(15, 23, 42, 0.6);
+            border-radius: 20px;
+            overflow: hidden;
+            border: 2px solid rgba(255, 107, 53, 0.2);
+            margin-top: 20px;
+            position: relative;
+            box-shadow: inset 0 2px 10px rgba(0, 0, 0, 0.3);
+        }
+
+        .progress-bar-fill {
+            height: 100%;
+            background: linear-gradient(90deg, #ff6b35 0%, #f7931e 50%, #ff6b35 100%);
+            background-size: 200% 100%;
+            border-radius: 20px;
+            transition: width 0.5s ease-out;
+            position: relative;
+            overflow: hidden;
+            box-shadow: 0 0 20px rgba(255, 107, 53, 0.5);
+            animation: shimmer 3s infinite;
+        }
+
+        @keyframes shimmer {
+            0% {
+                background-position: 200% 0;
+            }
+            100% {
+                background-position: -200% 0;
+            }
+        }
+
+        .progress-bar-fill::after {
+            content: '';
+            position: absolute;
+            top: 0;
+            left: 0;
+            right: 0;
+            bottom: 0;
+            background: linear-gradient(90deg, transparent, rgba(255, 255, 255, 0.3), transparent);
+            animation: shine 2s infinite;
+        }
+
+        @keyframes shine {
+            0% {
+                transform: translateX(-100%);
+            }
+            100% {
+                transform: translateX(100%);
+            }
+        }
+
+        .progress-target {
+            display: flex;
+            justify-content: space-between;
+            margin-top: 15px;
+            font-size: 0.9em;
+            color: rgba(255, 255, 255, 0.7);
+        }
+
+        .progress-info {
+            display: grid;
+            grid-template-columns: 1fr 1fr;
+            gap: 30px;
+            margin-bottom: 20px;
+        }
+
+        .progress-info-item {
+            text-align: center;
+        }
+
+        .progress-info-label {
+            font-size: 0.85em;
+            color: rgba(255, 255, 255, 0.6);
+            margin-bottom: 8px;
+            text-transform: uppercase;
+            letter-spacing: 1px;
+        }
+
+        .main-content {
+            display: grid;
+            grid-template-columns: 1fr;
+            gap: 20px;
+        }
+
+        .transactions-panel {
+            background: rgba(15, 23, 42, 0.8);
+            backdrop-filter: blur(10px);
+            border: 1px solid rgba(255, 255, 255, 0.1);
+            border-radius: 20px;
+            padding: 30px;
+            margin: 20px;
+            box-shadow: 0 20px 60px rgba(0, 0, 0, 0.5);
+            max-height: 75vh;
+            overflow-y: auto;
+        }
+        
+        .transactions-count {
+            color: rgba(255, 255, 255, 0.7);
+            font-size: 0.9em;
+            margin-bottom: 15px;
+            padding-bottom: 15px;
+            border-bottom: 1px solid rgba(255, 255, 255, 0.1);
+        }
+
+        .filters-section {
+            background: rgba(15, 23, 42, 0.6);
+            backdrop-filter: blur(10px);
+            border: 1px solid rgba(255, 255, 255, 0.1);
+            border-radius: 16px;
+            padding: 25px;
+            margin-bottom: 25px;
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+            gap: 20px;
+        }
+
+        .filter-group {
+            display: flex;
+            flex-direction: column;
+        }
+
+        .filter-label {
+            font-size: 0.85em;
+            color: rgba(255, 255, 255, 0.7);
+            margin-bottom: 10px;
+            font-weight: 600;
+            text-transform: uppercase;
+            letter-spacing: 1px;
+        }
+
+        .filter-input,
+        .filter-select {
+            padding: 12px 16px;
+            background: rgba(15, 23, 42, 0.8);
+            border: 1px solid rgba(255, 255, 255, 0.1);
+            border-radius: 10px;
+            font-size: 0.9em;
+            color: #ffffff;
+            transition: all 0.2s;
+        }
+
+        .filter-input::placeholder {
+            color: rgba(255, 255, 255, 0.4);
+        }
+
+        .filter-input:focus,
+        .filter-select:focus {
+            outline: none;
+            border-color: #ff6b35;
+            box-shadow: 0 0 0 3px rgba(255, 107, 53, 0.1);
+        }
+
+        .filter-buttons {
+            display: flex;
+            gap: 10px;
+            align-items: flex-end;
+        }
+
+        .btn {
+            padding: 10px 20px;
+            border: none;
+            border-radius: 8px;
+            font-size: 0.9em;
+            font-weight: 600;
+            cursor: pointer;
+            transition: all 0.2s;
+        }
+
+        .btn-primary {
+            background: linear-gradient(135deg, #ff6b35 0%, #f7931e 100%);
+            color: white;
+            border: none;
+            box-shadow: 0 4px 15px rgba(255, 107, 53, 0.3);
+        }
+
+        .btn-primary:hover {
+            background: linear-gradient(135deg, #f7931e 0%, #ff6b35 100%);
+            box-shadow: 0 6px 20px rgba(255, 107, 53, 0.4);
+            transform: translateY(-2px);
+        }
+
+        .btn-secondary {
+            background: rgba(255, 255, 255, 0.1);
+            color: white;
+            border: 1px solid rgba(255, 255, 255, 0.2);
+        }
+
+        .btn-secondary:hover {
+            background: rgba(255, 255, 255, 0.15);
+            border-color: rgba(255, 255, 255, 0.3);
+        }
+
+        .panel-header {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin-bottom: 20px;
+            padding-bottom: 15px;
+            border-bottom: 2px solid #f0f0f0;
+        }
+
+        .panel-header h2 {
+            background: linear-gradient(135deg, #ff6b35 0%, #f7931e 100%);
+            -webkit-background-clip: text;
+            -webkit-text-fill-color: transparent;
+            background-clip: text;
+            font-size: 2em;
+            font-weight: 700;
+        }
+
+        .status-indicator {
+            display: flex;
+            align-items: center;
+            gap: 10px;
+        }
+
+        .status-dot {
+            width: 12px;
+            height: 12px;
+            border-radius: 50%;
+            background: #4caf50;
+            animation: pulse 2s infinite;
+        }
+
+        @keyframes pulse {
+            0%, 100% { opacity: 1; }
+            50% { opacity: 0.5; }
+        }
+
+        .status-text {
+            color: rgba(255, 255, 255, 0.7);
+            font-size: 0.9em;
+        }
+
+        .transactions-list {
+            display: flex;
+            flex-direction: column;
+            gap: 15px;
+        }
+
+        .transactions-table {
+            width: 100%;
+            border-collapse: collapse;
+            background: transparent;
+            border-radius: 12px;
+            overflow: hidden;
+        }
+
+        .transactions-table thead {
+            background: rgba(255, 107, 53, 0.1);
+            border-bottom: 2px solid rgba(255, 107, 53, 0.3);
+        }
+
+        .transactions-table th {
+            padding: 18px 20px;
+            text-align: left;
+            font-weight: 700;
+            font-size: 0.85em;
+            text-transform: uppercase;
+            letter-spacing: 2px;
+            cursor: pointer;
+            user-select: none;
+            position: relative;
+            transition: all 0.2s;
+            color: rgba(255, 255, 255, 0.9);
+        }
+
+        .transactions-table th:hover {
+            background-color: rgba(255, 107, 53, 0.15);
+            color: #ff6b35;
+        }
+
+        .transactions-table th.sortable::after {
+            content: ' ↕';
+            opacity: 0.4;
+            font-size: 0.8em;
+            color: rgba(255, 107, 53, 0.6);
+        }
+
+        .transactions-table th.sort-asc::after {
+            content: ' ↑';
+            opacity: 1;
+            color: #ff6b35;
+        }
+
+        .transactions-table th.sort-desc::after {
+            content: ' ↓';
+            opacity: 1;
+            color: #ff6b35;
+        }
+
+        .transactions-table tbody tr {
+            border-bottom: 1px solid rgba(255, 255, 255, 0.05);
+            transition: all 0.2s;
+        }
+
+        .transactions-table tbody tr:hover {
+            background-color: rgba(255, 107, 53, 0.05);
+        }
+
+        .transactions-table tbody tr.new {
+            background-color: rgba(255, 107, 53, 0.1);
+            border-left: 3px solid #ff6b35;
+            animation: slideIn 0.3s ease-out;
+        }
+
+        @keyframes slideIn {
+            from {
+                opacity: 0;
+                transform: translateX(-10px);
+            }
+            to {
+                opacity: 1;
+                transform: translateX(0);
+            }
+        }
+
+        .transactions-table td {
+            padding: 18px 20px;
+            font-size: 0.95em;
+            color: rgba(255, 255, 255, 0.9);
+        }
+
+        .table-date {
+            font-family: 'Courier New', monospace;
+            color: rgba(255, 255, 255, 0.7);
+        }
+
+        .table-source {
+            font-family: 'Courier New', monospace;
+            color: rgba(255, 107, 53, 0.9);
+            word-break: break-all;
+        }
+
+        .table-amount {
+            font-weight: bold;
+            background: linear-gradient(135deg, #ff6b35 0%, #f7931e 100%);
+            -webkit-background-clip: text;
+            -webkit-text-fill-color: transparent;
+            background-clip: text;
+            text-align: right;
+        }
+
+        .table-tx-id {
+            font-family: 'Courier New', monospace;
+            font-size: 0.85em;
+        }
+
+        .table-tx-id a {
+            color: rgba(255, 107, 53, 0.9);
+            text-decoration: none;
+            transition: all 0.2s;
+        }
+
+        .table-tx-id a:hover {
+            color: #ff6b35;
+            text-decoration: underline;
+        }
+
+        .detail-item {
+            display: flex;
+            flex-direction: column;
+        }
+
+        .detail-label {
+            font-size: 0.75em;
+            color: #999;
+            text-transform: uppercase;
+            letter-spacing: 0.5px;
+            margin-bottom: 5px;
+        }
+
+        .detail-value {
+            font-size: 0.95em;
+            color: #333;
+            word-break: break-all;
+        }
+
+        .empty-state {
+            text-align: center;
+            padding: 60px 20px;
+            color: rgba(255, 255, 255, 0.5);
+        }
+
+        .empty-state svg {
+            width: 80px;
+            height: 80px;
+            margin-bottom: 20px;
+            opacity: 0.3;
+        }
+
+        /* Scrollbar styling */
+        .transactions-panel::-webkit-scrollbar {
+            width: 8px;
+        }
+
+        .transactions-panel::-webkit-scrollbar-track {
+            background: rgba(15, 23, 42, 0.5);
+            border-radius: 10px;
+        }
+
+        .transactions-panel::-webkit-scrollbar-thumb {
+            background: rgba(255, 107, 53, 0.5);
+            border-radius: 10px;
+        }
+
+        .transactions-panel::-webkit-scrollbar-thumb:hover {
+            background: rgba(255, 107, 53, 0.7);
+        }
+
+        @media (max-width: 768px) {
+            .header h1 {
+                font-size: 1.8em;
+            }
+
+            .stats-grid {
+                grid-template-columns: 1fr;
+            }
+
+            .transaction-header {
+                flex-direction: column;
+                gap: 10px;
+            }
+
+            .transaction-details {
+                grid-template-columns: 1fr;
+            }
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <div class="header">
+            <h1>Solstice Presale</h1>
+            
+            <div class="progress-card">
+                <div class="progress-header">
+                    <div class="progress-title">Fundraising Progress</div>
+                </div>
+                <div class="progress-info">
+                    <div class="progress-info-item">
+                        <div class="progress-info-label">Current Amount</div>
+                        <div class="progress-amount" id="currentAmount">$0.00</div>
+                    </div>
+                    <div class="progress-info-item">
+                        <div class="progress-info-label">Target Amount</div>
+                        <div class="progress-amount" style="font-size: 2em;">$4,000,000</div>
+                    </div>
+                </div>
+                <div style="text-align: center;">
+                    <div class="progress-percentage" id="progressPercentage">0.00%</div>
+                </div>
+                <div class="progress-bar-container">
+                    <div class="progress-bar-fill" id="progressBar"></div>
+                </div>
+                <div class="progress-target">
+                    <span>$0</span>
+                    <span id="progressText">0% of $4M target</span>
+                    <span>$4,000,000</span>
+                </div>
+            </div>
+            
+            <div class="stats-grid">
+                <div class="stat-card">
+                    <h3>Total Amount</h3>
+                    <div class="value" id="totalAmount">$0.00</div>
+                    <div class="subtitle">USDC Transferred</div>
+                </div>
+                <div class="stat-card">
+                    <h3>Total Transactions</h3>
+                    <div class="value" id="totalTransactions">0</div>
+                    <div class="subtitle">Transfer Events</div>
+                </div>
+                <div class="stat-card">
+                    <h3>New This Session</h3>
+                    <div class="value" id="newTransactions">0</div>
+                    <div class="subtitle">Since Page Load</div>
+                </div>
+            </div>
+        </div>
+
+        <div class="main-content">
+            <div class="transactions-panel">
+                <div class="panel-header">
+                    <h2>Recent Transactions</h2>
+                    <div class="status-indicator">
+                        <div class="status-dot"></div>
+                        <span class="status-text" id="statusText">Monitoring...</span>
+                    </div>
+                </div>
+                
+                <div class="filters-section">
+                    <div class="filter-group">
+                        <label class="filter-label">Date From</label>
+                        <input type="datetime-local" class="filter-input" id="filterDateFrom" placeholder="Start date">
+                    </div>
+                    <div class="filter-group">
+                        <label class="filter-label">Date To</label>
+                        <input type="datetime-local" class="filter-input" id="filterDateTo" placeholder="End date">
+                    </div>
+                    <div class="filter-group">
+                        <label class="filter-label">Source Address</label>
+                        <input type="text" class="filter-input" id="filterSource" placeholder="Filter by source...">
+                    </div>
+                    <div class="filter-group">
+                        <label class="filter-label">Min Amount (USDC)</label>
+                        <input type="number" class="filter-input" id="filterMinAmount" placeholder="0" step="0.01">
+                    </div>
+                    <div class="filter-group">
+                        <label class="filter-label">Max Amount (USDC)</label>
+                        <input type="number" class="filter-input" id="filterMaxAmount" placeholder="No limit" step="0.01">
+                    </div>
+                    <div class="filter-buttons">
+                        <button class="btn btn-primary" onclick="applyFilters()">Apply Filters</button>
+                        <button class="btn btn-secondary" onclick="clearFilters()">Clear</button>
+                    </div>
+                </div>
+                
+                <div class="transactions-count" id="transactionsCount" style="display: none;">
+                    Showing <span id="showingCount">0</span> of <span id="totalCount">0</span> transactions
+                </div>
+                <div class="transactions-list" id="transactionsList">
+                    <div class="empty-state">
+                        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                            <circle cx="12" cy="12" r="10"></circle>
+                            <line x1="12" y1="8" x2="12" y2="12"></line>
+                            <line x1="12" y1="16" x2="12.01" y2="16"></line>
+                        </svg>
+                        <p>Waiting for transactions...</p>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <script>
+        const API_BASE = 'http://localhost:5000/api';
+        const TARGET_AMOUNT = 4000000; // $4M target
+        let totalAmount = 0;
+        let totalTransactions = 0;
+        let newTransactionsCount = 0;
+        let transactions = [];
+        let filteredTransactions = [];
+        let initialLoadComplete = false;
+        let currentFilters = {
+            dateFrom: null,
+            dateTo: null,
+            source: '',
+            minAmount: null,
+            maxAmount: null
+        };
+        let sortColumn = 'date';
+        let sortDirection = 'desc'; // 'asc' or 'desc'
+
+        function formatAmount(amount) {
+            return new Intl.NumberFormat('en-US', {
+                style: 'currency',
+                currency: 'USD',
+                minimumFractionDigits: 2,
+                maximumFractionDigits: 2
+            }).format(amount);
+        }
+
+        function formatAddress(address) {
+            if (!address) return 'N/A';
+            return `${address.substring(0, 8)}...${address.substring(address.length - 8)}`;
+        }
+
+        function formatTransactionId(txId) {
+            if (!txId) return 'N/A';
+            return `${txId.substring(0, 16)}...${txId.substring(txId.length - 16)}`;
+        }
+
+        function addTransaction(transfer) {
+            // Check if transaction already exists (avoid duplicates)
+            const exists = transactions.some(t => t.transaction_id === transfer.transaction_id);
+            if (exists) {
+                return; // Skip if already exists
+            }
+            
+            // Add to beginning of list (newest first)
+            transactions.unshift(transfer);
+            
+            // Update totals
+            totalAmount += transfer.amount;
+            totalTransactions++;
+            newTransactionsCount++;
+            
+            // Update UI
+            updateStats();
+            filterTransactions(); // Re-apply filters and render
+        }
+
+        function updateStats() {
+            document.getElementById('totalAmount').textContent = formatAmount(totalAmount);
+            document.getElementById('totalTransactions').textContent = totalTransactions.toLocaleString();
+            document.getElementById('newTransactions').textContent = newTransactionsCount.toLocaleString();
+            updateProgressBar();
+        }
+
+        function updateProgressBar() {
+            const percentage = Math.min((totalAmount / TARGET_AMOUNT) * 100, 100);
+            const percentageText = percentage.toFixed(2);
+            
+            // Update progress bar width
+            const progressBar = document.getElementById('progressBar');
+            progressBar.style.width = `${percentage}%`;
+            
+            // Update percentage display
+            document.getElementById('progressPercentage').textContent = `${percentageText}%`;
+            
+            // Update current amount
+            document.getElementById('currentAmount').textContent = formatAmount(totalAmount);
+            
+            // Update progress text
+            document.getElementById('progressText').textContent = `${percentageText}% of $4M target`;
+        }
+
+        function parseDateFilter(dateString) {
+            if (!dateString) return null;
+            // Convert datetime-local format to Date object
+            return new Date(dateString);
+        }
+
+        function parseUTCString(utcString) {
+            // Parse "2025-12-22 14:16:22 UTC" format
+            if (!utcString || !utcString.includes('UTC')) return null;
+            const datePart = utcString.replace(' UTC', '').replace(' ', 'T');
+            return new Date(datePart + 'Z');
+        }
+
+        function applyFilters() {
+            const dateFrom = parseDateFilter(document.getElementById('filterDateFrom').value);
+            const dateTo = parseDateFilter(document.getElementById('filterDateTo').value);
+            const sourceFilter = document.getElementById('filterSource').value.toLowerCase();
+            const minAmount = parseFloat(document.getElementById('filterMinAmount').value) || null;
+            const maxAmount = parseFloat(document.getElementById('filterMaxAmount').value) || null;
+            
+            currentFilters = {
+                dateFrom: dateFrom,
+                dateTo: dateTo,
+                source: sourceFilter,
+                minAmount: minAmount,
+                maxAmount: maxAmount
+            };
+            
+            filterTransactions();
+        }
+
+        function clearFilters() {
+            document.getElementById('filterDateFrom').value = '';
+            document.getElementById('filterDateTo').value = '';
+            document.getElementById('filterSource').value = '';
+            document.getElementById('filterMinAmount').value = '';
+            document.getElementById('filterMaxAmount').value = '';
+            
+            currentFilters = {
+                dateFrom: null,
+                dateTo: null,
+                source: '',
+                minAmount: null,
+                maxAmount: null
+            };
+            
+            filterTransactions();
+        }
+
+        function filterTransactions() {
+            filteredTransactions = transactions.filter(transfer => {
+                // Date from filter
+                if (currentFilters.dateFrom) {
+                    const transferDate = parseUTCString(transfer.blocktime_utc);
+                    if (!transferDate || transferDate < currentFilters.dateFrom) {
+                        return false;
+                    }
+                }
+                
+                // Date to filter
+                if (currentFilters.dateTo) {
+                    const transferDate = parseUTCString(transfer.blocktime_utc);
+                    // Add one day to include the entire end date
+                    const endDate = new Date(currentFilters.dateTo);
+                    endDate.setHours(23, 59, 59, 999);
+                    if (!transferDate || transferDate > endDate) {
+                        return false;
+                    }
+                }
+                
+                // Source filter
+                if (currentFilters.source && 
+                    !transfer.source.toLowerCase().includes(currentFilters.source)) {
+                    return false;
+                }
+                
+                // Min amount filter
+                if (currentFilters.minAmount !== null && 
+                    transfer.amount < currentFilters.minAmount) {
+                    return false;
+                }
+                
+                // Max amount filter
+                if (currentFilters.maxAmount !== null && 
+                    transfer.amount > currentFilters.maxAmount) {
+                    return false;
+                }
+                
+                return true;
+            });
+            
+            renderTransactions();
+        }
+
+        function renderTransactions() {
+            const list = document.getElementById('transactionsList');
+            const countDiv = document.getElementById('transactionsCount');
+            const transactionsToShow = filteredTransactions.length > 0 ? filteredTransactions : transactions;
+            
+            // Update count display
+            if (transactions.length > 0) {
+                countDiv.style.display = 'block';
+                document.getElementById('showingCount').textContent = transactionsToShow.length.toLocaleString();
+                document.getElementById('totalCount').textContent = transactions.length.toLocaleString();
+            } else {
+                countDiv.style.display = 'none';
+            }
+            
+            if (transactionsToShow.length === 0) {
+                list.innerHTML = `
+                    <div class="empty-state">
+                        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                            <circle cx="12" cy="12" r="10"></circle>
+                            <line x1="12" y1="8" x2="12" y2="12"></line>
+                            <line x1="12" y1="16" x2="12.01" y2="16"></line>
+                        </svg>
+                        <p>${transactions.length === 0 ? 'Waiting for transactions...' : 'No transactions match the filters'}</p>
+                    </div>
+                `;
+                return;
+            }
+
+            // Sort transactions
+            const sortedTransactions = [...transactionsToShow].sort((a, b) => {
+                let aVal, bVal;
+                
+                if (sortColumn === 'date') {
+                    aVal = parseUTCString(a.blocktime_utc) || new Date(0);
+                    bVal = parseUTCString(b.blocktime_utc) || new Date(0);
+                } else if (sortColumn === 'source') {
+                    aVal = (a.source || '').toLowerCase();
+                    bVal = (b.source || '').toLowerCase();
+                } else if (sortColumn === 'amount') {
+                    aVal = a.amount || 0;
+                    bVal = b.amount || 0;
+                } else if (sortColumn === 'txid') {
+                    aVal = (a.transaction_id || '').toLowerCase();
+                    bVal = (b.transaction_id || '').toLowerCase();
+                }
+                
+                if (sortColumn === 'date' || sortColumn === 'amount') {
+                    return sortDirection === 'asc' ? aVal - bVal : bVal - aVal;
+                } else {
+                    if (aVal < bVal) return sortDirection === 'asc' ? -1 : 1;
+                    if (aVal > bVal) return sortDirection === 'asc' ? 1 : -1;
+                    return 0;
+                }
+            });
+            
+            // Render as table
+            list.innerHTML = `
+                <table class="transactions-table">
+                    <thead>
+                        <tr>
+                            <th class="sortable ${sortColumn === 'date' ? `sort-${sortDirection}` : ''}" onclick="sortTable('date')">Date (UTC)</th>
+                            <th class="sortable ${sortColumn === 'source' ? `sort-${sortDirection}` : ''}" onclick="sortTable('source')">Source</th>
+                            <th class="sortable ${sortColumn === 'amount' ? `sort-${sortDirection}` : ''}" style="text-align: right;" onclick="sortTable('amount')">Amount</th>
+                            <th class="sortable ${sortColumn === 'txid' ? `sort-${sortDirection}` : ''}" onclick="sortTable('txid')">Transaction ID</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        ${sortedTransactions.map((transfer, index) => {
+                            const isNew = index < 5; // Mark first 5 as new
+                            const txId = transfer.transaction_id || '';
+                            const txIdShort = txId ? `${txId.substring(0, 8)}...${txId.substring(txId.length - 8)}` : 'N/A';
+                            const solscanUrl = txId ? `https://solscan.io/tx/${txId}` : '#';
+                            return `
+                                <tr class="${isNew ? 'new' : ''}">
+                                    <td class="table-date">${transfer.blocktime_utc || 'N/A'}</td>
+                                    <td class="table-source">${transfer.source || 'N/A'}</td>
+                                    <td class="table-amount">${transfer.amount.toLocaleString('en-US', {minimumFractionDigits: 2, maximumFractionDigits: 2})} USDC</td>
+                                    <td class="table-tx-id">
+                                        ${txId ? `<a href="${solscanUrl}" target="_blank" rel="noopener noreferrer" title="${txId}">${txIdShort}</a>` : 'N/A'}
+                                    </td>
+                                </tr>
+                            `;
+                        }).join('')}
+                    </tbody>
+                </table>
+            `;
+        }
+
+        function sortTable(column) {
+            if (sortColumn === column) {
+                // Toggle direction if clicking same column
+                sortDirection = sortDirection === 'asc' ? 'desc' : 'asc';
+            } else {
+                // New column, default to descending
+                sortColumn = column;
+                sortDirection = 'desc';
+            }
+            renderTransactions();
+        }
+
+        async function checkForNewTransfers() {
+            // Don't check for new transfers until initial load is complete
+            if (!initialLoadComplete) {
+                return;
+            }
+            
+            try {
+                const response = await fetch(`${API_BASE}/new-transfers`);
+                const data = await response.json();
+                
+                if (data.new_transfers && data.new_transfers.length > 0) {
+                    // Only add truly new transactions (not already in our list)
+                    let addedCount = 0;
+                    data.new_transfers.forEach(transfer => {
+                        const beforeCount = transactions.length;
+                        addTransaction(transfer);
+                        if (transactions.length > beforeCount) {
+                            addedCount++;
+                        }
+                    });
+                    
+                    if (addedCount > 0) {
+                        // Update status
+                        document.getElementById('statusText').textContent = 
+                            `Found ${addedCount} new transaction(s)`;
+                        
+                        // Reset status after 3 seconds
+                        setTimeout(() => {
+                            document.getElementById('statusText').textContent = 'Monitoring...';
+                        }, 3000);
+                    }
+                } else {
+                    document.getElementById('statusText').textContent = 'Monitoring...';
+                }
+            } catch (error) {
+                console.error('Error fetching transfers:', error);
+                document.getElementById('statusText').textContent = 'Connection error';
+            }
+        }
+
+        async function loadInitialStats() {
+            try {
+                const response = await fetch(`${API_BASE}/stats`);
+                const data = await response.json();
+                
+                totalAmount = data.total_amount || 0;
+                totalTransactions = data.total_transfers || 0;
+                updateStats();
+            } catch (error) {
+                console.error('Error loading stats:', error);
+            }
+        }
+
+        async function checkBackfillStatus() {
+            try {
+                const response = await fetch(`${API_BASE}/backfill-status`);
+                const data = await response.json();
+                
+                if (data.backfill_in_progress) {
+                    document.getElementById('statusText').textContent = 
+                        `Loading historical data... (${data.seen_signatures} transactions processed)`;
+                } else if (data.backfill_complete) {
+                    // Update totals from backfill
+                    totalAmount = data.total_amount || 0;
+                    totalTransactions = data.total_transfers || 0;
+                    updateStats();
+                    
+                    document.getElementById('statusText').textContent = 
+                        `Monitoring for new transactions...`;
+                }
+            } catch (error) {
+                console.error('Error checking backfill status:', error);
+            }
+        }
+
+        // Initial load
+        loadInitialStats();
+        checkBackfillStatus();
+        
+        // Load ALL existing transactions from API (only once on page load)
+        async function loadExistingTransactions() {
+            console.log('loadExistingTransactions called, initialLoadComplete:', initialLoadComplete);
+            if (initialLoadComplete) {
+                return; // Already loaded, don't reload
+            }
+            
+            try {
+                document.getElementById('statusText').textContent = 'Loading all transactions...';
+                
+                // Load all transactions in batches
+                let allTransfers = [];
+                let offset = 0;
+                const limit = 1000;
+                let hasMore = true;
+                
+                while (hasMore) {
+                    const response = await fetch(`${API_BASE}/transfers?limit=${limit}&offset=${offset}`);
+                    const data = await response.json();
+                    
+                    if (data.transfers && data.transfers.length > 0) {
+                        allTransfers = allTransfers.concat(data.transfers);
+                        offset += limit;
+                        
+                        // Update status
+                        document.getElementById('statusText').textContent = 
+                            `Loading transactions... (${allTransfers.length} loaded)`;
+                        
+                        // Check if there are more
+                        if (data.transfers.length < limit) {
+                            hasMore = false;
+                        }
+                    } else {
+                        hasMore = false;
+                    }
+                }
+                
+                if (allTransfers.length > 0) {
+                    // Convert database format to display format
+                    const existingTransfers = allTransfers.map(t => ({
+                        source: t.source,
+                        blocktime: t.blocktime,
+                        blocktime_utc: t.blocktime_utc ? new Date(t.blocktime_utc).toISOString().replace('T', ' ').substring(0, 19) + ' UTC' : '',
+                        transaction_id: t.transaction_id,
+                        amount: parseFloat(t.amount),
+                        direction: t.direction,
+                        timestamp: t.blocktime
+                    }));
+                    
+                    // Sort by timestamp descending (newest first)
+                    existingTransfers.sort((a, b) => (b.timestamp || 0) - (a.timestamp || 0));
+                    transactions = existingTransfers;
+                    
+                    // Calculate totals from existing transactions
+                    totalAmount = transactions.reduce((sum, t) => sum + t.amount, 0);
+                    totalTransactions = transactions.length;
+                    updateStats();
+                    
+                    initialLoadComplete = true;
+                    filterTransactions();
+                    
+                    document.getElementById('statusText').textContent = 
+                        `Loaded ${transactions.length} transactions - Monitoring for new ones...`;
+                    
+                    console.log(`Loaded ${transactions.length} existing transactions`);
+                } else {
+                    initialLoadComplete = true;
+                    document.getElementById('statusText').textContent = 'No existing transactions - Monitoring...';
+                    console.log('No existing transactions found in database');
+                }
+            } catch (error) {
+                console.error('Error loading existing transactions:', error);
+                console.error('Error stack:', error.stack);
+                initialLoadComplete = true; // Mark as complete even on error to prevent retries
+                document.getElementById('statusText').textContent = `Error loading transactions: ${error.message}`;
+            }
+        }
+        
+        // Call loadExistingTransactions immediately on page load
+        // Wait for DOM to be ready
+        if (document.readyState === 'loading') {
+            document.addEventListener('DOMContentLoaded', () => {
+                console.log('DOM loaded, calling loadExistingTransactions');
+                loadExistingTransactions();
+            });
+        } else {
+            console.log('DOM already loaded, calling loadExistingTransactions');
+            loadExistingTransactions();
+        }
+        
+        // Check backfill status every 2 seconds until complete
+        const backfillCheckInterval = setInterval(async () => {
+            await checkBackfillStatus();
+            try {
+                const response = await fetch(`${API_BASE}/backfill-status`);
+                const data = await response.json();
+                if (data.backfill_complete && !data.backfill_in_progress) {
+                    clearInterval(backfillCheckInterval);
+                    // Load existing transactions if not already loaded
+                    if (!initialLoadComplete) {
+                        console.log('Backfill complete, loading existing transactions...');
+                        await loadExistingTransactions();
+                    }
+                    // Start checking for new transfers
+                    checkForNewTransfers();
+                }
+            } catch (error) {
+                console.error('Error in backfill check:', error);
+                // Continue checking
+            }
+        }, 2000);
+        
+        // Check for new transfers every minute (only after initial load)
+        setInterval(() => {
+            if (initialLoadComplete) {
+                checkForNewTransfers();
+            }
+        }, 60000);
+        
+        // Allow Enter key to apply filters
+        document.getElementById('filterSource').addEventListener('keypress', (e) => {
+            if (e.key === 'Enter') applyFilters();
+        });
+        document.getElementById('filterMinAmount').addEventListener('keypress', (e) => {
+            if (e.key === 'Enter') applyFilters();
+        });
+        document.getElementById('filterMaxAmount').addEventListener('keypress', (e) => {
+            if (e.key === 'Enter') applyFilters();
+        });
+        
+        // Auto-apply filters on date change
+        document.getElementById('filterDateFrom').addEventListener('change', applyFilters);
+        document.getElementById('filterDateTo').addEventListener('change', applyFilters);
+    </script>
+</body>
+</html>
+
