@@ -1086,15 +1086,25 @@
                 
                 if (allTransfers.length > 0) {
                     // Convert database format to display format
-                    const existingTransfers = allTransfers.map(t => ({
-                        source: t.source,
-                        blocktime: t.blocktime,
-                        blocktime_utc: t.blocktime_utc || (t.blocktime ? new Date(t.blocktime * 1000).toISOString().replace('T', ' ').substring(0, 19) + ' UTC' : ''),
-                        transaction_id: t.transaction_id,
-                        amount: parseFloat(t.amount),
-                        direction: t.direction,
-                        timestamp: t.blocktime
-                    }));
+                    const existingTransfers = allTransfers.map(t => {
+                        // Ensure blocktime_utc is properly formatted
+                        let blocktime_utc = t.blocktime_utc;
+                        if (!blocktime_utc && t.blocktime) {
+                            // Convert Unix timestamp to UTC string
+                            const dt = new Date(t.blocktime * 1000);
+                            blocktime_utc = dt.toISOString().replace('T', ' ').substring(0, 19) + ' UTC';
+                        }
+                        
+                        return {
+                            source: t.source || '',
+                            blocktime: t.blocktime || 0,
+                            blocktime_utc: blocktime_utc || '',
+                            transaction_id: t.transaction_id || '',
+                            amount: parseFloat(t.amount) || 0,
+                            direction: t.direction || '',
+                            timestamp: t.blocktime || 0
+                        };
+                    });
                     
                     // Sort by timestamp descending (newest first)
                     existingTransfers.sort((a, b) => (b.timestamp || 0) - (a.timestamp || 0));
@@ -1111,7 +1121,7 @@
                     document.getElementById('statusText').textContent = 
                         `Loaded ${transactions.length} transactions - Monitoring for new ones...`;
                     
-                    console.log(`Loaded ${transactions.length} existing transactions`);
+                    console.log(`Loaded ${transactions.length} existing transactions`, transactions.slice(0, 3));
                 } else {
                     initialLoadComplete = true;
                     document.getElementById('statusText').textContent = 'No existing transactions - Monitoring...';
