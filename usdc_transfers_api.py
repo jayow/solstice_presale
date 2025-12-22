@@ -64,10 +64,6 @@ def init_database():
         return
     
     try:
-    """Initialize database connection pool and create tables"""
-    global db_pool
-    
-    try:
         # Create connection pool
         db_pool = SimpleConnectionPool(1, 10, **DB_CONFIG)
         
