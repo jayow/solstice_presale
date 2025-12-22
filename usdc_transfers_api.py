@@ -629,6 +629,78 @@ def backfill_status():
     })
 
 
+@app.route('/api/chart-data')
+def get_chart_data():
+    """Get cumulative amount data over time for chart"""
+    try:
+        ensure_db_initialized()
+    except Exception as e:
+        return jsonify({"error": f"Database initialization failed: {e}"}), 500
+    
+    conn = None
+    try:
+        conn = get_db_connection()
+        cur = conn.cursor()
+        
+        # Get all transactions ordered by time (only from presale start)
+        query = """
+            SELECT 
+                blocktime,
+                blocktime_utc,
+                amount
+            FROM transfers
+            WHERE blocktime >= %s
+            ORDER BY blocktime ASC
+        """
+        
+        cur.execute(query, (PRESALE_START_TIMESTAMP,))
+        rows = cur.fetchall()
+        cur.close()
+        
+        # Calculate cumulative amounts
+        labels = []
+        amounts = []
+        cumulative = 0.0
+        
+        for row in rows:
+            blocktime_unix = row[0]
+            blocktime_utc = row[1]
+            amount = float(row[2])
+            
+            cumulative += amount
+            
+            # Format timestamp for label - use blocktime_utc if available, otherwise convert from Unix timestamp
+            if blocktime_utc:
+                if isinstance(blocktime_utc, datetime):
+                    label = blocktime_utc.strftime("%Y-%m-%d %H:%M UTC")
+                elif isinstance(blocktime_utc, str):
+                    label = blocktime_utc
+                else:
+                    # Convert from Unix timestamp
+                    dt = datetime.fromtimestamp(blocktime_unix, tz=timezone.utc)
+                    label = dt.strftime("%Y-%m-%d %H:%M UTC")
+            else:
+                # Convert from Unix timestamp
+                dt = datetime.fromtimestamp(blocktime_unix, tz=timezone.utc)
+                label = dt.strftime("%Y-%m-%d %H:%M UTC")
+            
+            labels.append(label)
+            amounts.append(cumulative)
+        
+        return jsonify({
+            "labels": labels,
+            "amounts": amounts
+        })
+    except Exception as e:
+        import traceback
+        error_msg = f"{str(e)}\n{traceback.format_exc()}"
+        print(f"Error in get_chart_data: {error_msg}")
+        return jsonify({"error": str(e)}), 500
+    finally:
+        if conn:
+            db_pool.putconn(conn)
+
+
 @app.route('/api/transfers')
 def get_transfers():
     """Get transfers with pagination and filtering"""
