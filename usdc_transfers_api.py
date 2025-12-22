@@ -216,17 +216,23 @@ def get_stats_from_db() -> Dict:
         if conn:
             db_pool.putconn(conn)
 
-def get_latest_transactions(limit: int = 100) -> List[Dict]:
+def get_latest_transactions(limit: int = 100, before: str = None) -> List[Dict]:
     """Get latest transactions for the program"""
+    params = {
+        "limit": limit
+    }
+    
+    # Add 'before' parameter to fetch older transactions
+    if before:
+        params["before"] = before
+    
     payload = {
         "jsonrpc": "2.0",
         "id": 1,
         "method": "getSignaturesForAddress",
         "params": [
             PROGRAM_ADDRESS,
-            {
-                "limit": limit
-            }
+            params
         ]
     }
     
@@ -462,7 +468,7 @@ def get_stats():
 
 
 def backfill_historical_transactions(limit: int = 1000):
-    """Backfill all historical transactions on startup"""
+    """Backfill all historical transactions from presale start time onwards"""
     global backfill_complete, backfill_in_progress
     
     if backfill_in_progress:
@@ -476,16 +482,58 @@ def backfill_historical_transactions(limit: int = 1000):
     seen_signatures = get_seen_signatures_from_db()
     initial_count = len(seen_signatures)
     
-    # Get all historical transactions
-    signatures = get_latest_transactions(limit=limit)
-    print(f"Found {len(signatures)} historical transactions to process")
+    # Fetch transactions in batches, going back in time until we reach presale start
+    all_signatures = []
+    before = None
+    batch_size = 1000
+    max_batches = 100  # Safety limit to avoid infinite loops
+    
+    print("Fetching historical transactions...")
+    for batch_num in range(max_batches):
+        signatures = get_latest_transactions(limit=batch_size, before=before)
+        
+        if not signatures:
+            break
+        
+        # Filter to only include transactions from presale start time onwards
+        relevant_signatures = []
+        oldest_timestamp = None
+        
+        for sig_info in signatures:
+            # Get blockTime if available (to check if we've gone back far enough)
+            block_time = sig_info.get("blockTime")
+            if block_time and block_time < PRESALE_START_TIMESTAMP:
+                # We've gone back before presale start, stop fetching
+                print(f"Reached presale start time. Oldest transaction: {datetime.fromtimestamp(block_time, tz=timezone.utc).strftime('%Y-%m-%d %H:%M:%S UTC')}")
+                break
+            
+            if block_time and block_time >= PRESALE_START_TIMESTAMP:
+                relevant_signatures.append(sig_info)
+                if oldest_timestamp is None or block_time < oldest_timestamp:
+                    oldest_timestamp = block_time
+        
+        all_signatures.extend(relevant_signatures)
+        
+        # If we found transactions before presale start, we're done
+        if any(sig.get("blockTime", 0) < PRESALE_START_TIMESTAMP for sig in signatures):
+            break
+        
+        # If we got fewer than batch_size, we've reached the end
+        if len(signatures) < batch_size:
+            break
+        
+        # Set 'before' to the oldest signature in this batch for next iteration
+        before = signatures[-1]["signature"]
+        print(f"Batch {batch_num + 1}: Found {len(relevant_signatures)} relevant transactions (total: {len(all_signatures)})")
+    
+    print(f"Found {len(all_signatures)} historical transactions to process")
     print(f"Already have {initial_count} transactions in database")
-    print(f"Filtering to only include transactions from presale start time onwards...")
+    print(f"Processing transactions...")
     
     processed = 0
     new_transfers_count = 0
     
-    for i, sig_info in enumerate(signatures):
+    for i, sig_info in enumerate(all_signatures):
         signature = sig_info["signature"]
         
         # Skip if already seen
@@ -509,13 +557,14 @@ def backfill_historical_transactions(limit: int = 1000):
             # Save to database
             if save_transfer_to_db(transfer):
                 new_transfers_count += 1
+                seen_signatures.add(signature)  # Track in memory to avoid duplicates
         
         processed += 1
         
         # Progress update every 50 transactions
         if (i + 1) % 50 == 0:
             stats = get_stats_from_db()
-            print(f"Processed {i + 1}/{len(signatures)} transactions... "
+            print(f"Processed {i + 1}/{len(all_signatures)} transactions... "
                   f"({stats['total_transfers']} transfers, ${stats['total_amount']:,.2f} USDC)")
     
     backfill_complete = True
