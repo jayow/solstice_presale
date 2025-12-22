@@ -756,6 +756,37 @@ def reset():
             db_pool.putconn(conn)
 
 
+@app.route('/api/import-transaction', methods=['POST'])
+def import_transaction():
+    """Import a single transaction (for syncing from local DB)"""
+    try:
+        ensure_db_initialized()
+    except Exception as e:
+        return jsonify({"error": f"Database initialization failed: {e}"}), 500
+    
+    data = request.json
+    if not data:
+        return jsonify({"error": "No data provided"}), 400
+    
+    transfer = {
+        'signature': data.get('transaction_id', ''),
+        'owner': data.get('source', ''),
+        'timestamp': data.get('blocktime', 0),
+        'amount': data.get('amount', 0),
+        'direction': data.get('direction', 'in')
+    }
+    
+    # Only import transactions from presale start time onwards
+    if transfer['timestamp'] < PRESALE_START_TIMESTAMP:
+        return jsonify({"error": "Transaction before presale start time"}), 400
+    
+    success = save_transfer_to_db(transfer)
+    if success:
+        return jsonify({"status": "imported", "transaction_id": transfer['signature']})
+    else:
+        return jsonify({"status": "skipped", "message": "Transaction already exists or failed to save"})
+
+
 if __name__ == '__main__':
     print("=" * 80)
     print("USDC Transfers Dashboard API")
