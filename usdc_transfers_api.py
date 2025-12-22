@@ -514,8 +514,16 @@ def backfill_historical_transactions(limit: int = 1000):
         
         all_signatures.extend(relevant_signatures)
         
-        # If we found transactions before presale start, we're done
-        if any(sig.get("blockTime", 0) < PRESALE_START_TIMESTAMP for sig in signatures):
+        # Check if any transaction in this batch is before presale start
+        found_before_presale = False
+        for sig in signatures:
+            block_time = sig.get("blockTime")
+            if block_time and block_time < PRESALE_START_TIMESTAMP:
+                found_before_presale = True
+                print(f"Found transaction before presale start: {datetime.fromtimestamp(block_time, tz=timezone.utc).strftime('%Y-%m-%d %H:%M:%S UTC')}")
+                break
+        
+        if found_before_presale:
             break
         
         # If we got fewer than batch_size, we've reached the end
