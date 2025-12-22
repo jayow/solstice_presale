@@ -539,11 +539,21 @@ def backfill_historical_transactions(limit: int = 1000):
     }
 
 
-@app.route('/api/backfill')
+@app.route('/api/backfill', methods=['GET', 'POST'])
 def trigger_backfill():
     """Manually trigger backfill"""
-    result = backfill_historical_transactions(limit=1000)
-    return jsonify(result)
+    import threading
+    # Run backfill in background thread to avoid timeout
+    def run_backfill():
+        backfill_historical_transactions(limit=1000)
+    
+    thread = threading.Thread(target=run_backfill, daemon=True)
+    thread.start()
+    
+    return jsonify({
+        "status": "started",
+        "message": "Backfill process started in background. Check /api/backfill-status for progress."
+    })
 
 
 @app.route('/api/backfill-status')

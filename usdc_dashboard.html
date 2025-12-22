@@ -1089,7 +1089,7 @@
                     const existingTransfers = allTransfers.map(t => ({
                         source: t.source,
                         blocktime: t.blocktime,
-                        blocktime_utc: t.blocktime_utc ? new Date(t.blocktime_utc).toISOString().replace('T', ' ').substring(0, 19) + ' UTC' : '',
+                        blocktime_utc: t.blocktime_utc || (t.blocktime ? new Date(t.blocktime * 1000).toISOString().replace('T', ' ').substring(0, 19) + ' UTC' : ''),
                         transaction_id: t.transaction_id,
                         amount: parseFloat(t.amount),
                         direction: t.direction,
