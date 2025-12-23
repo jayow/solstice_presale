@@ -622,6 +622,9 @@ def get_new_transfers():
                 "transaction_id": transfer.get("signature", ""),
                 "amount": transfer.get("amount", 0),
                 "direction": transfer.get("direction", ""),
+                "transfer_type": transfer.get("transfer_type", "transfer"),
+                "signer": transfer.get("signer", ""),
+                "is_signer_account": transfer.get("is_signer_account", False),
                 "timestamp": timestamp or 0
             }
             new_transfers.append(transfer_data)
@@ -977,7 +980,10 @@ def get_transfers():
                     'blocktime': int(row[2]) if row[2] else 0,
                     'blocktime_utc': blocktime_utc_str,
                     'amount': float(row[4]) if row[4] else 0.0,
-                    'direction': row[5] or ''
+                    'direction': row[5] or '',
+                    'transfer_type': row[6] if len(row) > 6 else 'transfer',
+                    'signer': row[7] if len(row) > 7 else '',
+                    'is_signer_account': row[8] if len(row) > 8 else False
                 }
                 transfers_list.append(transfer_dict)
             except Exception as conv_error:
