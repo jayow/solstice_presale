@@ -1033,6 +1033,7 @@
                         <tr>
                             <th class="sortable ${sortColumn === 'date' ? `sort-${sortDirection}` : ''}" onclick="sortTable('date')">Date (UTC)</th>
                             <th class="sortable ${sortColumn === 'source' ? `sort-${sortDirection}` : ''}" onclick="sortTable('source')">Source</th>
+                            <th class="sortable ${sortColumn === 'type' ? `sort-${sortDirection}` : ''}" onclick="sortTable('type')">Type</th>
                             <th class="sortable ${sortColumn === 'amount' ? `sort-${sortDirection}` : ''}" style="text-align: right;" onclick="sortTable('amount')">Amount</th>
                             <th class="sortable ${sortColumn === 'txid' ? `sort-${sortDirection}` : ''}" onclick="sortTable('txid')">Transaction ID</th>
                         </tr>
@@ -1043,10 +1044,23 @@
                             const txId = transfer.transaction_id || '';
                             const txIdShort = txId ? `${txId.substring(0, 8)}...${txId.substring(txId.length - 8)}` : 'N/A';
                             const solscanUrl = txId ? `https://solscan.io/tx/${txId}` : '#';
+                            // Determine transaction type
+                            let transferType = 'Unknown';
+                            let typeClass = 'type-unknown';
+                            if (transfer.transfer_type) {
+                                transferType = transfer.transfer_type.charAt(0).toUpperCase() + transfer.transfer_type.slice(1);
+                                typeClass = transfer.transfer_type === 'deposit' ? 'type-deposit' : transfer.transfer_type === 'refund' ? 'type-refund' : 'type-transfer';
+                            } else if (transfer.direction) {
+                                // Fallback to direction if transfer_type not available
+                                transferType = transfer.direction === 'out' ? 'Deposit' : transfer.direction === 'in' ? 'Refund' : 'Unknown';
+                                typeClass = transfer.direction === 'out' ? 'type-deposit' : transfer.direction === 'in' ? 'type-refund' : 'type-unknown';
+                            }
+                            
                             return `
                                 <tr class="${isNew ? 'new' : ''}">
                                     <td class="table-date">${transfer.blocktime_utc || 'N/A'}</td>
                                     <td class="table-source">${transfer.source || 'N/A'}</td>
+                                    <td class="table-type"><span class="type-badge ${typeClass}">${transferType}</span></td>
                                     <td class="table-amount">${transfer.amount.toLocaleString('en-US', {minimumFractionDigits: 2, maximumFractionDigits: 2})} USDC</td>
                                     <td class="table-tx-id">
                                         ${txId ? `<a href="${solscanUrl}" target="_blank" rel="noopener noreferrer" title="${txId}">${txIdShort}</a>` : 'N/A'}
@@ -1396,7 +1410,8 @@
                 let hasMore = true;
                 
                 while (hasMore) {
-                    const response = await fetch(`${API_BASE}/transfers?limit=${limit}&offset=${offset}`);
+                    // Fetch all transactions - use a large limit to get everything
+                    const response = await fetch(`${API_BASE}/transfers?limit=10000&offset=${offset}`);
                     const data = await response.json();
                     
                     if (data.transfers && data.transfers.length > 0) {
