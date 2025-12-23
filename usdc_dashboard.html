@@ -1014,6 +1014,10 @@
                 } else if (sortColumn === 'source') {
                     aVal = (a.source || '').toLowerCase();
                     bVal = (b.source || '').toLowerCase();
+                } else if (sortColumn === 'type') {
+                    // Sort by transfer_type or direction
+                    aVal = (a.transfer_type || a.direction || '').toLowerCase();
+                    bVal = (b.transfer_type || b.direction || '').toLowerCase();
                 } else if (sortColumn === 'amount') {
                     aVal = a.amount || 0;
                     bVal = b.amount || 0;
