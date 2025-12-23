@@ -272,7 +272,8 @@ def get_stats_from_db() -> Dict:
         cur.execute("""
             SELECT 
                 COUNT(*) as total_transfers,
-                COUNT(DISTINCT transaction_id) as unique_transactions
+                COUNT(DISTINCT transaction_id) as unique_transactions,
+                COUNT(DISTINCT source) as unique_users
             FROM transfers
             WHERE blocktime >= %s;
         """, (PRESALE_START_TIMESTAMP,))
@@ -313,6 +314,7 @@ def get_stats_from_db() -> Dict:
             "total_transfers": overall['total_transfers'] or 0,
             "total_amount": net_amount,  # Net amount (deposits - refunds)
             "unique_transactions": overall['unique_transactions'] or 0,
+            "unique_users": overall['unique_users'] or 0,
             "deposit_count": deposits['deposit_count'] or 0,
             "deposit_amount": deposit_amount,
             "deposit_transactions": deposits['deposit_transactions'] or 0,
@@ -326,6 +328,7 @@ def get_stats_from_db() -> Dict:
             "total_transfers": 0, 
             "total_amount": 0.0, 
             "unique_transactions": 0,
+            "unique_users": 0,
             "deposit_count": 0,
             "deposit_amount": 0.0,
             "deposit_transactions": 0,
