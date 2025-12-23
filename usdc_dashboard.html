@@ -73,24 +73,26 @@
             color: #ff6b35;
             text-align: right;
             display: flex;
-            flex-direction: column;
-            justify-content: center;
-            height: 100%;
-            min-height: 2.5rem; /* Match button height */
+            flex-direction: row;
+            align-items: center;
+            justify-content: flex-end;
+            gap: 0.5rem;
+            height: 2.5rem; /* Match button height exactly */
         }
 
         .presale-countdown-label {
-            font-size: 0.75rem; /* 12px */
-            opacity: 0.8;
-            margin-bottom: 0.25rem;
+            font-size: 0.875rem; /* 14px */
+            opacity: 0.9;
             text-transform: uppercase;
-            letter-spacing: 1.5px;
+            letter-spacing: 1px;
             font-weight: 700;
+            margin: 0;
         }
 
         .presale-countdown-time {
             font-weight: 700;
-            font-size: 1.125rem; /* 18px */
+            font-size: 0.875rem; /* 14px */
+            margin: 0;
         }
 
         .join-presale-btn {
@@ -230,7 +232,7 @@
         .progress-percentage {
             font-size: 1.25rem; /* 20px - reduced from 48px, will be inside bar */
             font-weight: 800;
-            color: #0a0e27;
+            color: #ffffff;
             margin-bottom: 0;
             line-height: 1;
             position: absolute;
@@ -238,7 +240,6 @@
             top: 50%;
             transform: translate(-50%, -50%);
             z-index: 10;
-            text-shadow: 0 1px 2px rgba(255, 255, 255, 0.3);
         }
 
         .progress-bar-container {
