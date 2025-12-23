@@ -1330,6 +1330,13 @@ def get_transfers():
                 else:
                     blocktime_utc_str = "N/A"
                 
+                # Determine transfer_type from direction if not in DB
+                transfer_type = row[6] if len(row) > 6 and row[6] else None
+                if not transfer_type:
+                    # Fallback: derive from direction
+                    direction = row[5] or ''
+                    transfer_type = 'deposit' if direction == 'out' else 'refund' if direction == 'in' else 'transfer'
+                
                 transfer_dict = {
                     'transaction_id': row[0] or '',
                     'source': row[1] or '',
@@ -1337,7 +1344,7 @@ def get_transfers():
                     'blocktime_utc': blocktime_utc_str,
                     'amount': float(row[4]) if row[4] else 0.0,
                     'direction': row[5] or '',
-                    'transfer_type': row[6] if len(row) > 6 else 'transfer',
+                    'transfer_type': transfer_type,
                     'signer': row[7] if len(row) > 7 else '',
                     'is_signer_account': row[8] if len(row) > 8 else False
                 }
