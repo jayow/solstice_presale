@@ -384,7 +384,7 @@
 
         .progress-info {
             display: grid;
-            grid-template-columns: 1fr 1fr;
+            grid-template-columns: 1fr 1fr 1fr;
             gap: 30px;
             margin-bottom: 20px;
         }
@@ -836,6 +836,10 @@
                         <div class="progress-info-label">Target Amount</div>
                         <div class="progress-amount" style="font-size: 2rem;">$4,000,000</div>
                     </div>
+                    <div class="progress-info-item">
+                        <div class="progress-info-label">Hard Cap</div>
+                        <div class="progress-amount" style="font-size: 2rem;">$6,500,000</div>
+                    </div>
                 </div>
                 <div style="text-align: center;">
                     <div class="progress-percentage" id="progressPercentage">0.00%</div>
@@ -846,7 +850,7 @@
                 <div class="progress-target">
                     <span>$0</span>
                     <span id="progressText">0% of $4M target</span>
-                    <span>$4,000,000</span>
+                    <span>$6,500,000</span>
                 </div>
             </div>
             
@@ -954,7 +958,8 @@
         const API_BASE = window.location.hostname === 'localhost' 
             ? 'http://localhost:5000/api' 
             : '/api';
-        const TARGET_AMOUNT = 4000000; // $4M target
+        const TARGET_AMOUNT = 4000000; // $4M target raise
+        const HARD_CAP_AMOUNT = 6500000; // $6.5M hard cap
         let totalAmount = 0;
         let totalTransactions = 0;
         let newTransactionsCount = 0;
@@ -1049,21 +1054,47 @@
         }
 
         function updateProgressBar() {
-            const percentage = Math.min((totalAmount / TARGET_AMOUNT) * 100, 100);
+            // Calculate percentage based on target ($4M), but cap at hard cap ($6.5M)
+            let percentage = (totalAmount / TARGET_AMOUNT) * 100;
+            
+            // If we exceed the hard cap, show 100% but indicate we're over
+            if (totalAmount >= HARD_CAP_AMOUNT) {
+                percentage = 100;
+            } else if (totalAmount > TARGET_AMOUNT) {
+                // If we're between target and hard cap, show percentage of target but indicate we're over target
+                percentage = Math.min(percentage, 100);
+            } else {
+                percentage = Math.min(percentage, 100);
+            }
+            
             const percentageText = percentage.toFixed(2);
             
-            // Update progress bar width
+            // Update progress bar width (cap at 100% visually)
             const progressBar = document.getElementById('progressBar');
-            progressBar.style.width = `${percentage}%`;
+            progressBar.style.width = `${Math.min(percentage, 100)}%`;
             
             // Update percentage display
-            document.getElementById('progressPercentage').textContent = `${percentageText}%`;
+            let displayText = `${percentageText}%`;
+            if (totalAmount >= HARD_CAP_AMOUNT) {
+                displayText = '100% (Hard Cap Reached)';
+            } else if (totalAmount > TARGET_AMOUNT) {
+                displayText = `${percentageText}% (Over Target)`;
+            }
+            document.getElementById('progressPercentage').textContent = displayText;
             
             // Update current amount
             document.getElementById('currentAmount').textContent = formatAmount(totalAmount);
             
             // Update progress text
-            document.getElementById('progressText').textContent = `${percentageText}% of $4M target`;
+            let progressText = '';
+            if (totalAmount >= HARD_CAP_AMOUNT) {
+                progressText = 'Hard Cap Reached';
+            } else if (totalAmount > TARGET_AMOUNT) {
+                progressText = `${percentageText}% of $4M target (Hard Cap: $6.5M)`;
+            } else {
+                progressText = `${percentageText}% of $4M target`;
+            }
+            document.getElementById('progressText').textContent = progressText;
         }
 
         function parseDateFilter(dateString) {
