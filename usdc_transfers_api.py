@@ -103,6 +103,38 @@ def init_database():
                 CREATE INDEX IF NOT EXISTS idx_blocktime_utc ON transfers(blocktime_utc DESC);
             """)
             
+            # Create contract_transactions table to store all contract transactions
+            cur.execute("""
+                CREATE TABLE IF NOT EXISTS contract_transactions (
+                    id SERIAL PRIMARY KEY,
+                    transaction_id VARCHAR(88) UNIQUE NOT NULL,
+                    blocktime BIGINT NOT NULL,
+                    blocktime_utc TIMESTAMP,
+                    fee BIGINT,
+                    status VARCHAR(20),
+                    signer VARCHAR(44),
+                    program_address VARCHAR(44),
+                    instruction_count INTEGER,
+                    account_count INTEGER,
+                    transaction_data JSONB,
+                    created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
+                );
+            """)
+            
+            # Create indexes for contract_transactions
+            cur.execute("""
+                CREATE INDEX IF NOT EXISTS idx_contract_tx_id ON contract_transactions(transaction_id);
+            """)
+            cur.execute("""
+                CREATE INDEX IF NOT EXISTS idx_contract_blocktime ON contract_transactions(blocktime DESC);
+            """)
+            cur.execute("""
+                CREATE INDEX IF NOT EXISTS idx_contract_blocktime_utc ON contract_transactions(blocktime_utc DESC);
+            """)
+            cur.execute("""
+                CREATE INDEX IF NOT EXISTS idx_contract_signer ON contract_transactions(signer);
+            """)
+            
             conn.commit()
             cur.close()
             db_initialized = True
@@ -276,6 +308,94 @@ def get_transaction_details(signature: str) -> Dict:
         return data.get("result")
     except Exception as e:
         return None
+
+
+def extract_contract_transaction(transaction: Dict) -> Dict:
+    """Extract all contract transaction information"""
+    if not transaction:
+        return None
+    
+    meta = transaction.get("meta", {})
+    tx_data = transaction.get("transaction", {})
+    signature = tx_data.get("signatures", [""])[0] if tx_data else ""
+    
+    if not signature:
+        return None
+    
+    # Extract transaction details
+    block_time = transaction.get("blockTime")
+    fee = meta.get("fee", 0)
+    err = meta.get("err")
+    status = "success" if err is None else "failed"
+    
+    # Get signer (first account is usually the signer)
+    account_keys = tx_data.get("message", {}).get("accountKeys", [])
+    signer = account_keys[0].get("pubkey", "") if account_keys else ""
+    
+    # Count instructions and accounts
+    instructions = tx_data.get("message", {}).get("instructions", [])
+    instruction_count = len(instructions)
+    account_count = len(account_keys)
+    
+    # Convert blocktime to UTC datetime
+    blocktime_utc = None
+    if block_time:
+        dt_utc = datetime.fromtimestamp(block_time, tz=timezone.utc)
+        blocktime_utc = dt_utc.replace(tzinfo=None)
+    
+    return {
+        "transaction_id": signature,
+        "blocktime": block_time or 0,
+        "blocktime_utc": blocktime_utc,
+        "fee": fee,
+        "status": status,
+        "signer": signer,
+        "program_address": PROGRAM_ADDRESS,
+        "instruction_count": instruction_count,
+        "account_count": account_count,
+        "transaction_data": json.dumps(transaction)  # Store full transaction as JSON
+    }
+
+
+def save_contract_transaction(transaction_data: Dict) -> bool:
+    """Save a contract transaction to PostgreSQL"""
+    conn = None
+    try:
+        conn = get_db_connection()
+        cur = conn.cursor()
+        
+        cur.execute("""
+            INSERT INTO contract_transactions (
+                transaction_id, blocktime, blocktime_utc, fee, status, 
+                signer, program_address, instruction_count, account_count, transaction_data
+            )
+            VALUES (%s, %s, %s, %s, %s, %s, %s, %s, %s, %s)
+            ON CONFLICT (transaction_id) DO NOTHING
+            RETURNING id;
+        """, (
+            transaction_data.get('transaction_id', ''),
+            transaction_data.get('blocktime', 0),
+            transaction_data.get('blocktime_utc'),
+            transaction_data.get('fee', 0),
+            transaction_data.get('status', ''),
+            transaction_data.get('signer', ''),
+            transaction_data.get('program_address', ''),
+            transaction_data.get('instruction_count', 0),
+            transaction_data.get('account_count', 0),
+            transaction_data.get('transaction_data', '{}')
+        ))
+        
+        conn.commit()
+        cur.close()
+        return cur.rowcount > 0
+    except Exception as e:
+        if conn:
+            conn.rollback()
+        print(f"Error saving contract transaction to DB: {e}")
+        return False
+    finally:
+        if conn:
+            db_pool.putconn(conn)
 
 
 def extract_usdc_transfers(transaction: Dict) -> List[Dict]:
