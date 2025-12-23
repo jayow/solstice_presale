@@ -1415,28 +1415,43 @@
                 // Load all transactions in batches
                 let allTransfers = [];
                 let offset = 0;
-                const limit = 1000;
+                const limit = 1000; // Fetch 1000 at a time
                 let hasMore = true;
                 
                 while (hasMore) {
-                    // Fetch all transactions - use a large limit to get everything
-                    const response = await fetch(`${API_BASE}/transfers?limit=10000&offset=${offset}`);
-                    const data = await response.json();
-                    
-                    if (data.transfers && data.transfers.length > 0) {
-                        allTransfers = allTransfers.concat(data.transfers);
-                        offset += limit;
+                    try {
+                        const response = await fetch(`${API_BASE}/transfers?limit=${limit}&offset=${offset}`);
                         
-                        // Update status
-                        document.getElementById('statusText').textContent = 
-                            `Loading transactions... (${allTransfers.length} loaded)`;
+                        if (!response.ok) {
+                            throw new Error(`HTTP error! status: ${response.status}`);
+                        }
                         
-                        // Check if there are more
-                        if (data.transfers.length < limit) {
+                        const data = await response.json();
+                        
+                        if (data.transfers && data.transfers.length > 0) {
+                            allTransfers = allTransfers.concat(data.transfers);
+                            offset += data.transfers.length; // Use actual count, not limit
+                            
+                            // Update status
+                            document.getElementById('statusText').textContent = 
+                                `Loading transactions... (${allTransfers.length} loaded)`;
+                            
+                            // Check if there are more - if we got fewer than requested, we're done
+                            if (data.transfers.length < limit) {
+                                hasMore = false;
+                            }
+                        } else {
                             hasMore = false;
                         }
-                    } else {
-                        hasMore = false;
+                    } catch (fetchError) {
+                        console.error('Error fetching transactions batch:', fetchError);
+                        // If we have some transactions, continue with what we have
+                        if (allTransfers.length > 0) {
+                            console.log(`Continuing with ${allTransfers.length} transactions loaded so far`);
+                            hasMore = false;
+                        } else {
+                            throw fetchError; // Re-throw if we have nothing
+                        }
                     }
                 }
                 
