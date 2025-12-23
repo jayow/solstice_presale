@@ -982,9 +982,19 @@ def get_stats():
     
     stats = get_stats_from_db()
     return jsonify({
-        "total_amount": stats["total_amount"],
+        "total_amount": stats["total_amount"],  # Net amount (deposits - refunds)
         "total_transfers": stats["total_transfers"],
-        "seen_signatures_count": stats["unique_transactions"]
+        "seen_signatures_count": stats["unique_transactions"],
+        "deposits": {
+            "count": stats["deposit_count"],
+            "amount": stats["deposit_amount"],
+            "transactions": stats["deposit_transactions"]
+        },
+        "refunds": {
+            "count": stats["refund_count"],
+            "amount": stats["refund_amount"],
+            "transactions": stats["refund_transactions"]
+        }
     })
 
 
