@@ -530,6 +530,11 @@ def get_new_transfers():
         if not transaction:
             continue
         
+        # Also save contract transaction data
+        contract_tx = extract_contract_transaction(transaction)
+        if contract_tx:
+            save_contract_transaction(contract_tx)
+        
         # Extract USDC transfers
         transfers = extract_usdc_transfers(transaction)
         
@@ -672,6 +677,11 @@ def backfill_historical_transactions(limit: int = 1000):
         transaction = get_transaction_details(signature)
         if not transaction:
             continue
+        
+        # Also save contract transaction data
+        contract_tx = extract_contract_transaction(transaction)
+        if contract_tx:
+            save_contract_transaction(contract_tx)
         
         # Extract USDC transfers
         transfers = extract_usdc_transfers(transaction)
