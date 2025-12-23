@@ -1496,7 +1496,9 @@
                     document.getElementById('statusText').textContent = 
                         `Loaded ${transactions.length} transactions - Monitoring for new ones...`;
                     
-                    console.log(`Loaded ${transactions.length} existing transactions`, transactions.slice(0, 3));
+                    console.log(`✓ Loaded ${transactions.length} existing transactions`);
+                    console.log('Sample transactions:', transactions.slice(0, 3));
+                    console.log('Calling filterTransactions to render...');
                 } else {
                     initialLoadComplete = true;
                     document.getElementById('statusText').textContent = 'No existing transactions - Monitoring...';
