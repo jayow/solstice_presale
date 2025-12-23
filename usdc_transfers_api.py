@@ -286,7 +286,17 @@ def get_stats_from_db() -> Dict:
         }
     except Exception as e:
         print(f"Error getting stats from DB: {e}")
-        return {"total_transfers": 0, "total_amount": 0.0, "unique_transactions": 0}
+        return {
+            "total_transfers": 0, 
+            "total_amount": 0.0, 
+            "unique_transactions": 0,
+            "deposit_count": 0,
+            "deposit_amount": 0.0,
+            "deposit_transactions": 0,
+            "refund_count": 0,
+            "refund_amount": 0.0,
+            "refund_transactions": 0
+        }
     finally:
         if conn:
             db_pool.putconn(conn)
