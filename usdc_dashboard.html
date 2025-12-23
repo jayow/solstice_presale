@@ -730,6 +730,11 @@
                     <div class="subtitle">Transfer Events</div>
                 </div>
                 <div class="stat-card">
+                    <h3>Refunds</h3>
+                    <div class="value" id="refundAmount">$0</div>
+                    <div class="subtitle" id="refundCount">0 transactions</div>
+                </div>
+                <div class="stat-card">
                     <h3>New This Session</h3>
                     <div class="value" id="newTransactions">0</div>
                     <div class="subtitle">Since Page Load</div>
@@ -800,6 +805,8 @@
         let totalAmount = 0;
         let totalTransactions = 0;
         let newTransactionsCount = 0;
+        let refundAmount = 0;
+        let refundCount = 0;
         let transactions = [];
         let filteredTransactions = [];
         let initialLoadComplete = false;
@@ -874,6 +881,17 @@
             document.getElementById('totalAmount').textContent = formatAmount(totalAmount);
             document.getElementById('totalTransactions').textContent = totalTransactions.toLocaleString();
             document.getElementById('newTransactions').textContent = newTransactionsCount.toLocaleString();
+            
+            // Update refund stats if elements exist
+            const refundAmountEl = document.getElementById('refundAmount');
+            const refundCountEl = document.getElementById('refundCount');
+            if (refundAmountEl) {
+                refundAmountEl.textContent = formatAmount(refundAmount);
+            }
+            if (refundCountEl) {
+                refundCountEl.textContent = refundCount.toLocaleString() + ' transactions';
+            }
+            
             updateProgressBar();
         }
 
@@ -1157,6 +1175,13 @@
                 
                 totalAmount = data.total_amount || 0;
                 totalTransactions = data.total_transfers || 0;
+                
+                // Get refund stats if available
+                if (data.refunds) {
+                    refundAmount = data.refunds.amount || 0;
+                    refundCount = data.refunds.count || 0;
+                }
+                
                 updateStats();
             } catch (error) {
                 console.error('Error loading stats:', error);
