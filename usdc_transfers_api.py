@@ -82,6 +82,8 @@ def init_database():
                     blocktime_utc TIMESTAMP,
                     amount DECIMAL(20, 6) NOT NULL,
                     direction VARCHAR(10) NOT NULL,
+                    signer VARCHAR(44),
+                    is_signer_account BOOLEAN DEFAULT FALSE,
                     created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
                 );
             """)
