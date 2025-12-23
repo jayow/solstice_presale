@@ -949,6 +949,9 @@ def get_transfers():
         if direction:
             count_query += " AND direction = %s"
             count_params.append(direction)
+        if transfer_type_filter:
+            count_query += " AND transfer_type = %s"
+            count_params.append(transfer_type_filter)
         
         cur.execute(count_query, count_params)
         total_count = cur.fetchone()[0]
