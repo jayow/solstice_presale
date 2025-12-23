@@ -1488,9 +1488,20 @@
                     existingTransfers.sort((a, b) => (b.timestamp || 0) - (a.timestamp || 0));
                     transactions = existingTransfers;
                     
-                    // Calculate totals from existing transactions
-                    totalAmount = transactions.reduce((sum, t) => sum + t.amount, 0);
-                    totalTransactions = transactions.length;
+                    // Get totals from API (net amount = deposits - refunds)
+                    // Don't recalculate by summing all transactions, as that would include refunds
+                    try {
+                        const statsResponse = await fetch(`${API_BASE}/stats`);
+                        const statsData = await statsResponse.json();
+                        totalAmount = statsData.total_amount || 0; // Net amount from API
+                        totalTransactions = statsData.total_transfers || transactions.length;
+                        console.log(`📊 Using API stats: Net amount = $${totalAmount.toLocaleString()}, Total transfers = ${totalTransactions}`);
+                    } catch (statsError) {
+                        console.error('Error fetching stats for total:', statsError);
+                        // Fallback: use transaction count but don't sum amounts (would be wrong)
+                        totalTransactions = transactions.length;
+                        // Keep totalAmount from initial load or use 0
+                    }
                     updateStats();
                     
                     initialLoadComplete = true;
