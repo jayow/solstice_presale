@@ -847,10 +847,14 @@
             // Add to beginning of list (newest first)
             transactions.unshift(transfer);
             
-            // Update totals
-            totalAmount += transfer.amount;
+            // Update transaction count
             totalTransactions++;
             newTransactionsCount++;
+            
+            // Don't update totalAmount here - it should come from API stats (deposits - refunds)
+            // Adding individual amounts would incorrectly include refunds
+            // Instead, refresh stats from API to get accurate net amount
+            loadInitialStats();
             
             // Update UI
             updateStats();
