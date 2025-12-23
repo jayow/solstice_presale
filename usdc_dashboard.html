@@ -857,11 +857,11 @@
                         <div class="progress-amount" style="font-size: 2rem;">$6,500,000</div>
                     </div>
                 </div>
-                <div style="text-align: center;">
-                    <div class="progress-percentage" id="progressPercentage">0.00%</div>
-                </div>
-                <div class="progress-bar-container">
-                    <div class="progress-bar-fill" id="progressBar"></div>
+                <div class="progress-bar-container-wrapper">
+                    <div class="progress-bar-container">
+                        <div class="progress-bar-fill" id="progressBar"></div>
+                        <div class="progress-percentage" id="progressPercentage">0.00%</div>
+                    </div>
                 </div>
                 <div class="progress-target">
                     <span>$0</span>
@@ -1089,12 +1089,10 @@
             const progressBar = document.getElementById('progressBar');
             progressBar.style.width = `${Math.min(percentage, 100)}%`;
             
-            // Update percentage display
+            // Update percentage display (inside progress bar - just show percentage)
             let displayText = `${percentageText}%`;
             if (totalAmount >= HARD_CAP_AMOUNT) {
-                displayText = '100% (Hard Cap Reached)';
-            } else if (totalAmount > TARGET_AMOUNT) {
-                displayText = `${percentageText}% (Over Target)`;
+                displayText = '100%';
             }
             document.getElementById('progressPercentage').textContent = displayText;
             
