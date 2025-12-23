@@ -82,6 +82,7 @@ def init_database():
                     blocktime_utc TIMESTAMP,
                     amount DECIMAL(20, 6) NOT NULL,
                     direction VARCHAR(10) NOT NULL,
+                    transfer_type VARCHAR(20),
                     signer VARCHAR(44),
                     is_signer_account BOOLEAN DEFAULT FALSE,
                     created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
@@ -175,8 +176,8 @@ def save_transfer_to_db(transfer: Dict):
             blocktime_utc = dt_utc.replace(tzinfo=None)
         
         cur.execute("""
-            INSERT INTO transfers (transaction_id, source, blocktime, blocktime_utc, amount, direction, signer, is_signer_account)
-            VALUES (%s, %s, %s, %s, %s, %s, %s, %s)
+            INSERT INTO transfers (transaction_id, source, blocktime, blocktime_utc, amount, direction, transfer_type, signer, is_signer_account)
+            VALUES (%s, %s, %s, %s, %s, %s, %s, %s, %s)
             ON CONFLICT (transaction_id) DO NOTHING
             RETURNING id;
         """, (
@@ -186,6 +187,7 @@ def save_transfer_to_db(transfer: Dict):
             blocktime_utc,
             transfer.get('amount', 0),
             transfer.get('direction', ''),
+            transfer.get('transfer_type', 'transfer'),
             transfer.get('signer', ''),
             transfer.get('is_signer_account', False)
         ))
@@ -461,33 +463,55 @@ def extract_usdc_transfers(transaction: Dict) -> List[Dict]:
     account_keys = tx_data.get("message", {}).get("accountKeys", [])
     signer_address = account_keys[0].get("pubkey", "") if account_keys else ""
     
-    # Create transfers - determine actual flow direction
+    # Create transfers - determine actual flow direction and transfer type
     for account_index, balance_info in balance_changes.items():
         change = balance_info["post_amount"] - balance_info["pre_amount"]
         if abs(change) > 0.000001:
             owner = balance_info.get("owner", "")
+            is_signer = owner == signer_address
             
-            # Determine actual direction based on who is sending/receiving
-            # If signer's account balance increases, they're receiving (could be refund)
-            # If signer's account balance decreases, they're sending (deposit)
-            # But we need to track from the contract's perspective:
-            # - "in" = USDC coming INTO the contract (user deposits)
-            # - "out" = USDC going OUT OF the contract (refunds/withdrawals)
-            
-            # For now, use the signer's perspective:
-            # If signer receives USDC (balance increases), mark as "in" from their perspective
-            # If signer sends USDC (balance decreases), mark as "out" from their perspective
-            # But note: This might not always be correct for contract-to-contract transfers
-            
-            # Better approach: Track both sender and receiver
+            # Determine direction (balance change perspective)
             if change > 0:
-                # Balance increased - this account received USDC
-                direction = "in"  # From the receiver's perspective
-                source = owner  # The account that received
+                direction = "in"  # Balance increased
             else:
-                # Balance decreased - this account sent USDC
-                direction = "out"  # From the sender's perspective
-                source = owner  # The account that sent
+                direction = "out"  # Balance decreased
+            
+            # Determine transfer type from contract's perspective:
+            # - DEPOSIT: User sends USDC TO the contract (signer's balance decreases)
+            # - REFUND: Contract sends USDC FROM the contract TO user (signer's balance increases)
+            # - WITHDRAWAL: Similar to refund, but might have different semantics
+            
+            if is_signer:
+                # This is the signer's account
+                if change < 0:
+                    # Signer's balance decreased = they sent USDC = DEPOSIT
+                    transfer_type = "deposit"
+                else:
+                    # Signer's balance increased = they received USDC = REFUND
+                    transfer_type = "refund"
+            else:
+                # This is not the signer's account - could be contract or another user
+                # If signer sent and this account received, it's a deposit
+                # If signer received and this account sent, it's a refund
+                # We need to check the signer's change in this transaction
+                signer_change = None
+                for acc_idx, acc_info in balance_changes.items():
+                    if acc_info.get("owner") == signer_address:
+                        signer_change = acc_info["post_amount"] - acc_info["pre_amount"]
+                        break
+                
+                if signer_change is not None:
+                    if signer_change < 0 and change > 0:
+                        # Signer sent, this account received = DEPOSIT
+                        transfer_type = "deposit"
+                    elif signer_change > 0 and change < 0:
+                        # Signer received, this account sent = REFUND
+                        transfer_type = "refund"
+                    else:
+                        # Other scenarios (contract-to-contract, etc.)
+                        transfer_type = "transfer"
+                else:
+                    transfer_type = "transfer"
             
             transfer = {
                 "signature": signature,
@@ -495,9 +519,10 @@ def extract_usdc_transfers(transaction: Dict) -> List[Dict]:
                 "owner": owner,
                 "change": change,
                 "direction": direction,
+                "transfer_type": transfer_type,
                 "amount": abs(change),
                 "signer": signer_address,
-                "is_signer_account": owner == signer_address
+                "is_signer_account": is_signer
             }
             transfers.append(transfer)
     
