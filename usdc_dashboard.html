@@ -1398,18 +1398,21 @@
         }
 
         // Initial load
+        console.log('🚀 Initializing dashboard...');
+        console.log('API_BASE:', API_BASE);
         loadInitialStats();
         checkBackfillStatus();
         initChart();
         
         // Load ALL existing transactions from API (only once on page load)
         async function loadExistingTransactions() {
-            console.log('loadExistingTransactions called, initialLoadComplete:', initialLoadComplete);
+            console.log('📥 loadExistingTransactions called, initialLoadComplete:', initialLoadComplete);
             if (initialLoadComplete) {
                 return; // Already loaded, don't reload
             }
             
             try {
+                console.log('📡 Starting to fetch transactions from:', `${API_BASE}/transfers`);
                 document.getElementById('statusText').textContent = 'Loading all transactions...';
                 
                 // Load all transactions in batches
@@ -1420,13 +1423,16 @@
                 
                 while (hasMore) {
                     try {
-                        const response = await fetch(`${API_BASE}/transfers?limit=${limit}&offset=${offset}`);
+                        const url = `${API_BASE}/transfers?limit=${limit}&offset=${offset}`;
+                        console.log(`📥 Fetching batch: offset=${offset}, limit=${limit}`);
+                        const response = await fetch(url);
                         
                         if (!response.ok) {
                             throw new Error(`HTTP error! status: ${response.status}`);
                         }
                         
                         const data = await response.json();
+                        console.log(`✅ Received ${data.transfers?.length || 0} transactions in this batch`);
                         
                         if (data.transfers && data.transfers.length > 0) {
                             allTransfers = allTransfers.concat(data.transfers);
