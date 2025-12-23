@@ -452,17 +452,48 @@ def extract_usdc_transfers(transaction: Dict) -> List[Dict]:
                     "post_amount": amount,
                 }
     
-    # Create transfers
+    # Get transaction signer (first account is usually the signer)
+    tx_data = transaction.get("transaction", {})
+    account_keys = tx_data.get("message", {}).get("accountKeys", [])
+    signer_address = account_keys[0].get("pubkey", "") if account_keys else ""
+    
+    # Create transfers - determine actual flow direction
     for account_index, balance_info in balance_changes.items():
         change = balance_info["post_amount"] - balance_info["pre_amount"]
         if abs(change) > 0.000001:
+            owner = balance_info.get("owner", "")
+            
+            # Determine actual direction based on who is sending/receiving
+            # If signer's account balance increases, they're receiving (could be refund)
+            # If signer's account balance decreases, they're sending (deposit)
+            # But we need to track from the contract's perspective:
+            # - "in" = USDC coming INTO the contract (user deposits)
+            # - "out" = USDC going OUT OF the contract (refunds/withdrawals)
+            
+            # For now, use the signer's perspective:
+            # If signer receives USDC (balance increases), mark as "in" from their perspective
+            # If signer sends USDC (balance decreases), mark as "out" from their perspective
+            # But note: This might not always be correct for contract-to-contract transfers
+            
+            # Better approach: Track both sender and receiver
+            if change > 0:
+                # Balance increased - this account received USDC
+                direction = "in"  # From the receiver's perspective
+                source = owner  # The account that received
+            else:
+                # Balance decreased - this account sent USDC
+                direction = "out"  # From the sender's perspective
+                source = owner  # The account that sent
+            
             transfer = {
                 "signature": signature,
                 "timestamp": transaction.get("blockTime"),
-                "owner": balance_info.get("owner", ""),
+                "owner": owner,
                 "change": change,
-                "direction": "in" if change > 0 else "out",
-                "amount": abs(change)
+                "direction": direction,
+                "amount": abs(change),
+                "signer": signer_address,
+                "is_signer_account": owner == signer_address
             }
             transfers.append(transfer)
     
