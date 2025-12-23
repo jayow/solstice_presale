@@ -561,6 +561,302 @@ def index():
     return send_file('usdc_dashboard.html')
 
 
+@app.route('/temp-view')
+def temp_view():
+    """Temporary view to see deposit and refund transactions"""
+    # Ensure database is initialized
+    try:
+        ensure_db_initialized()
+    except Exception as e:
+        return f"Database initialization error: {e}", 500
+    
+    conn = None
+    try:
+        conn = get_db_connection()
+        cur = conn.cursor(cursor_factory=RealDictCursor)
+        
+        # Find users with both deposits and refunds
+        cur.execute('''
+            SELECT 
+                source,
+                COUNT(DISTINCT CASE WHEN direction = 'out' THEN transaction_id END) as deposit_count,
+                COUNT(DISTINCT CASE WHEN direction = 'in' THEN transaction_id END) as refund_count
+            FROM transfers
+            WHERE blocktime >= %s
+            GROUP BY source
+            HAVING COUNT(DISTINCT CASE WHEN direction = 'out' THEN transaction_id END) > 0
+               AND COUNT(DISTINCT CASE WHEN direction = 'in' THEN transaction_id END) > 0
+            ORDER BY (COUNT(DISTINCT CASE WHEN direction = 'out' THEN transaction_id END) + 
+                      COUNT(DISTINCT CASE WHEN direction = 'in' THEN transaction_id END)) DESC
+            LIMIT 20
+        ''', (PRESALE_START_TIMESTAMP,))
+        
+        users = cur.fetchall()
+        
+        # Get transactions for each user
+        result_data = []
+        for user in users:
+            source = user['source']
+            
+            # Get deposit transactions
+            cur.execute('''
+                SELECT transaction_id, amount, blocktime_utc, direction
+                FROM transfers
+                WHERE source = %s AND direction = 'out' AND blocktime >= %s
+                ORDER BY blocktime DESC
+                LIMIT 5
+            ''', (source, PRESALE_START_TIMESTAMP))
+            deposits = cur.fetchall()
+            
+            # Get refund transactions
+            cur.execute('''
+                SELECT transaction_id, amount, blocktime_utc, direction
+                FROM transfers
+                WHERE source = %s AND direction = 'in' AND blocktime >= %s
+                ORDER BY blocktime DESC
+                LIMIT 5
+            ''', (source, PRESALE_START_TIMESTAMP))
+            refunds = cur.fetchall()
+            
+            result_data.append({
+                'source': source,
+                'deposit_count': user['deposit_count'],
+                'refund_count': user['refund_count'],
+                'deposits': [dict(d) for d in deposits],
+                'refunds': [dict(r) for r in refunds]
+            })
+        
+        cur.close()
+        
+        # Generate HTML
+        html = """
+        <!DOCTYPE html>
+        <html lang="en">
+        <head>
+            <meta charset="UTF-8">
+            <meta name="viewport" content="width=device-width, initial-scale=1.0">
+            <title>Deposit & Refund Transactions - Temp View</title>
+            <style>
+                * {
+                    margin: 0;
+                    padding: 0;
+                    box-sizing: border-box;
+                }
+                body {
+                    font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Oxygen, Ubuntu, Cantarell, sans-serif;
+                    background: linear-gradient(135deg, #1a0b2e 0%, #2d1b4e 50%, #1a0b2e 100%);
+                    color: #e9d5ff;
+                    padding: 20px;
+                    min-height: 100vh;
+                }
+                .container {
+                    max-width: 1200px;
+                    margin: 0 auto;
+                }
+                h1 {
+                    color: #ff6b35;
+                    margin-bottom: 30px;
+                    text-align: center;
+                }
+                .user-card {
+                    background: rgba(26, 11, 46, 0.8);
+                    border: 1px solid rgba(139, 92, 246, 0.3);
+                    border-radius: 12px;
+                    padding: 20px;
+                    margin-bottom: 30px;
+                    backdrop-filter: blur(20px);
+                }
+                .user-header {
+                    display: flex;
+                    justify-content: space-between;
+                    align-items: center;
+                    margin-bottom: 20px;
+                    padding-bottom: 15px;
+                    border-bottom: 1px solid rgba(139, 92, 246, 0.2);
+                }
+                .user-address {
+                    font-family: 'Courier New', monospace;
+                    font-size: 14px;
+                    color: #c4b5fd;
+                    word-break: break-all;
+                }
+                .user-stats {
+                    display: flex;
+                    gap: 20px;
+                }
+                .stat {
+                    padding: 8px 16px;
+                    border-radius: 8px;
+                    font-weight: 600;
+                }
+                .stat-deposits {
+                    background: rgba(34, 197, 94, 0.2);
+                    color: #4ade80;
+                }
+                .stat-refunds {
+                    background: rgba(239, 68, 68, 0.2);
+                    color: #f87171;
+                }
+                .transactions-section {
+                    margin-top: 20px;
+                }
+                .section-title {
+                    color: #ff6b35;
+                    font-size: 18px;
+                    margin-bottom: 15px;
+                    display: flex;
+                    align-items: center;
+                    gap: 10px;
+                }
+                .transaction-list {
+                    display: grid;
+                    gap: 10px;
+                }
+                .transaction-item {
+                    background: rgba(139, 92, 246, 0.1);
+                    border: 1px solid rgba(139, 92, 246, 0.2);
+                    border-radius: 8px;
+                    padding: 15px;
+                    display: flex;
+                    justify-content: space-between;
+                    align-items: center;
+                    transition: all 0.3s ease;
+                }
+                .transaction-item:hover {
+                    background: rgba(139, 92, 246, 0.2);
+                    border-color: rgba(139, 92, 246, 0.4);
+                    transform: translateX(5px);
+                }
+                .transaction-link {
+                    color: #60a5fa;
+                    text-decoration: none;
+                    font-family: 'Courier New', monospace;
+                    font-size: 13px;
+                    word-break: break-all;
+                    flex: 1;
+                    margin-right: 15px;
+                }
+                .transaction-link:hover {
+                    color: #93c5fd;
+                    text-decoration: underline;
+                }
+                .transaction-amount {
+                    color: #fbbf24;
+                    font-weight: 600;
+                    font-size: 16px;
+                    margin-right: 15px;
+                }
+                .transaction-time {
+                    color: #a78bfa;
+                    font-size: 12px;
+                }
+                .badge {
+                    display: inline-block;
+                    padding: 4px 8px;
+                    border-radius: 4px;
+                    font-size: 11px;
+                    font-weight: 600;
+                    text-transform: uppercase;
+                    margin-left: 10px;
+                }
+                .badge-deposit {
+                    background: rgba(34, 197, 94, 0.2);
+                    color: #4ade80;
+                }
+                .badge-refund {
+                    background: rgba(239, 68, 68, 0.2);
+                    color: #f87171;
+                }
+            </style>
+        </head>
+        <body>
+            <div class="container">
+                <h1>💰 Deposit & Refund Transactions</h1>
+        """
+        
+        for user_data in result_data:
+            html += f"""
+                <div class="user-card">
+                    <div class="user-header">
+                        <div class="user-address">{user_data['source']}</div>
+                        <div class="user-stats">
+                            <div class="stat stat-deposits">Deposits: {user_data['deposit_count']}</div>
+                            <div class="stat stat-refunds">Refunds: {user_data['refund_count']}</div>
+                        </div>
+                    </div>
+                    
+                    <div class="transactions-section">
+                        <div class="section-title">
+                            📤 Deposits ({len(user_data['deposits'])} shown)
+                        </div>
+                        <div class="transaction-list">
+            """
+            
+            for deposit in user_data['deposits']:
+                tx_id = deposit['transaction_id']
+                amount = float(deposit['amount'])
+                time_str = deposit['blocktime_utc'] or 'N/A'
+                solscan_url = f"https://solscan.io/tx/{tx_id}"
+                html += f"""
+                            <div class="transaction-item">
+                                <a href="{solscan_url}" target="_blank" class="transaction-link">
+                                    {tx_id}
+                                </a>
+                                <span class="transaction-amount">{amount:,.2f} USDC</span>
+                                <span class="transaction-time">{time_str}</span>
+                                <span class="badge badge-deposit">Deposit</span>
+                            </div>
+                """
+            
+            html += """
+                        </div>
+                        
+                        <div class="section-title" style="margin-top: 25px;">
+                            📥 Refunds ({len(user_data['refunds'])} shown)
+                        </div>
+                        <div class="transaction-list">
+            """
+            
+            for refund in user_data['refunds']:
+                tx_id = refund['transaction_id']
+                amount = float(refund['amount'])
+                time_str = refund['blocktime_utc'] or 'N/A'
+                solscan_url = f"https://solscan.io/tx/{tx_id}"
+                html += f"""
+                            <div class="transaction-item">
+                                <a href="{solscan_url}" target="_blank" class="transaction-link">
+                                    {tx_id}
+                                </a>
+                                <span class="transaction-amount">{amount:,.2f} USDC</span>
+                                <span class="transaction-time">{time_str}</span>
+                                <span class="badge badge-refund">Refund</span>
+                            </div>
+                """
+            
+            html += """
+                        </div>
+                    </div>
+                </div>
+            """
+        
+        html += """
+            </div>
+        </body>
+        </html>
+        """
+        
+        return html
+        
+    except Exception as e:
+        import traceback
+        error_msg = f"{str(e)}\n{traceback.format_exc()}"
+        print(f"Error in temp_view: {error_msg}")
+        return f"Error: {str(e)}", 500
+    finally:
+        if conn:
+            db_pool.putconn(conn)
+
+
 @app.route('/api/new-transfers')
 def get_new_transfers():
     """Get only new USDC transfers since last check"""
