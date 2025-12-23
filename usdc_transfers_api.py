@@ -224,28 +224,65 @@ def get_seen_signatures_from_db() -> Set[str]:
 
 
 def get_stats_from_db() -> Dict:
-    """Get statistics from database (only from presale start time)"""
+    """Get statistics from database (only from presale start time)
+    Returns net amount (deposits - refunds), not sum of all transactions
+    """
     conn = None
     try:
         conn = get_db_connection()
         cur = conn.cursor(cursor_factory=RealDictCursor)
         
+        # Get overall stats
         cur.execute("""
             SELECT 
                 COUNT(*) as total_transfers,
-                SUM(amount) as total_amount,
                 COUNT(DISTINCT transaction_id) as unique_transactions
             FROM transfers
             WHERE blocktime >= %s;
         """, (PRESALE_START_TIMESTAMP,))
         
-        result = cur.fetchone()
+        overall = cur.fetchone()
+        
+        # Get deposit stats (direction = 'out' means user sent to contract = deposit)
+        cur.execute("""
+            SELECT 
+                COUNT(*) as deposit_count,
+                SUM(amount) as deposit_amount,
+                COUNT(DISTINCT transaction_id) as deposit_transactions
+            FROM transfers
+            WHERE blocktime >= %s AND direction = 'out';
+        """, (PRESALE_START_TIMESTAMP,))
+        
+        deposits = cur.fetchone()
+        
+        # Get refund stats (direction = 'in' means user received from contract = refund)
+        cur.execute("""
+            SELECT 
+                COUNT(*) as refund_count,
+                SUM(amount) as refund_amount,
+                COUNT(DISTINCT transaction_id) as refund_transactions
+            FROM transfers
+            WHERE blocktime >= %s AND direction = 'in';
+        """, (PRESALE_START_TIMESTAMP,))
+        
+        refunds = cur.fetchone()
+        
         cur.close()
         
+        deposit_amount = float(deposits['deposit_amount'] or 0)
+        refund_amount = float(refunds['refund_amount'] or 0)
+        net_amount = deposit_amount - refund_amount  # Net = Deposits - Refunds
+        
         return {
-            "total_transfers": result['total_transfers'] or 0,
-            "total_amount": float(result['total_amount'] or 0),
-            "unique_transactions": result['unique_transactions'] or 0
+            "total_transfers": overall['total_transfers'] or 0,
+            "total_amount": net_amount,  # Net amount (deposits - refunds)
+            "unique_transactions": overall['unique_transactions'] or 0,
+            "deposit_count": deposits['deposit_count'] or 0,
+            "deposit_amount": deposit_amount,
+            "deposit_transactions": deposits['deposit_transactions'] or 0,
+            "refund_count": refunds['refund_count'] or 0,
+            "refund_amount": refund_amount,
+            "refund_transactions": refunds['refund_transactions'] or 0
         }
     except Exception as e:
         print(f"Error getting stats from DB: {e}")
