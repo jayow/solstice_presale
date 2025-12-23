@@ -1034,6 +1034,7 @@ def get_stats():
         "total_amount": stats["total_amount"],  # Net amount (deposits - refunds)
         "total_transfers": stats["total_transfers"],
         "seen_signatures_count": stats["unique_transactions"],
+        "unique_users": stats["unique_users"],
         "deposits": {
             "count": stats["deposit_count"],
             "amount": stats["deposit_amount"],
