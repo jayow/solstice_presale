@@ -89,6 +89,42 @@ def init_database():
                 );
             """)
             
+            # Add transfer_type column if it doesn't exist (migration)
+            cur.execute("""
+                DO $$ 
+                BEGIN
+                    IF NOT EXISTS (
+                        SELECT 1 FROM information_schema.columns 
+                        WHERE table_name='transfers' AND column_name='transfer_type'
+                    ) THEN
+                        ALTER TABLE transfers ADD COLUMN transfer_type VARCHAR(20);
+                        -- Populate transfer_type based on direction for existing records
+                        UPDATE transfers SET transfer_type = 'deposit' WHERE direction = 'out';
+                        UPDATE transfers SET transfer_type = 'refund' WHERE direction = 'in';
+                        UPDATE transfers SET transfer_type = 'transfer' WHERE transfer_type IS NULL;
+                    END IF;
+                END $$;
+            """)
+            
+            # Add signer and is_signer_account columns if they don't exist (migration)
+            cur.execute("""
+                DO $$ 
+                BEGIN
+                    IF NOT EXISTS (
+                        SELECT 1 FROM information_schema.columns 
+                        WHERE table_name='transfers' AND column_name='signer'
+                    ) THEN
+                        ALTER TABLE transfers ADD COLUMN signer VARCHAR(44);
+                    END IF;
+                    IF NOT EXISTS (
+                        SELECT 1 FROM information_schema.columns 
+                        WHERE table_name='transfers' AND column_name='is_signer_account'
+                    ) THEN
+                        ALTER TABLE transfers ADD COLUMN is_signer_account BOOLEAN DEFAULT FALSE;
+                    END IF;
+                END $$;
+            """)
+            
             # Create indexes for fast queries
             cur.execute("""
                 CREATE INDEX IF NOT EXISTS idx_transaction_id ON transfers(transaction_id);
