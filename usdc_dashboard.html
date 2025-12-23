@@ -1533,7 +1533,14 @@
                         const statsData = await statsResponse.json();
                         totalAmount = statsData.total_amount || 0; // Net amount from API
                         totalTransactions = statsData.total_transfers || transactions.length;
-                        console.log(`📊 Using API stats: Net amount = $${totalAmount.toLocaleString()}, Total transfers = ${totalTransactions}`);
+                        
+                        // Get refund stats if available
+                        if (statsData.refunds) {
+                            refundAmount = statsData.refunds.amount || 0;
+                            refundCount = statsData.refunds.count || 0;
+                        }
+                        
+                        console.log(`📊 Using API stats: Net amount = $${totalAmount.toLocaleString()}, Total transfers = ${totalTransactions}, Refunds = $${refundAmount.toLocaleString()} (${refundCount} transactions)`);
                     } catch (statsError) {
                         console.error('Error fetching stats for total:', statsError);
                         // Fallback: use transaction count but don't sum amounts (would be wrong)
