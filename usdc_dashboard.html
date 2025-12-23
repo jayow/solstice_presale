@@ -839,6 +839,11 @@
                 return; // Skip if already exists
             }
             
+            // Ensure transfer_type is included
+            if (!transfer.transfer_type && transfer.direction) {
+                transfer.transfer_type = transfer.direction === 'out' ? 'deposit' : transfer.direction === 'in' ? 'refund' : '';
+            }
+            
             // Add to beginning of list (newest first)
             transactions.unshift(transfer);
             
