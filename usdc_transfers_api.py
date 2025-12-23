@@ -1225,11 +1225,14 @@ def get_chart_data():
         cur = conn.cursor()
         
         # Get all transactions ordered by time (only from presale start)
+        # Include direction to calculate net cumulative (deposits - refunds)
         query = """
             SELECT 
                 blocktime,
                 blocktime_utc,
-                amount
+                amount,
+                direction,
+                transfer_type
             FROM transfers
             WHERE blocktime >= %s
             ORDER BY blocktime ASC
@@ -1239,7 +1242,7 @@ def get_chart_data():
         rows = cur.fetchall()
         cur.close()
         
-        # Calculate cumulative amounts
+        # Calculate cumulative NET amounts (deposits - refunds)
         labels = []
         amounts = []
         cumulative = 0.0
@@ -1248,8 +1251,31 @@ def get_chart_data():
             blocktime_unix = row[0]
             blocktime_utc = row[1]
             amount = float(row[2])
+            direction = row[3] if len(row) > 3 else None
+            transfer_type = row[4] if len(row) > 4 else None
             
-            cumulative += amount
+            # Determine if this is a deposit or refund
+            # Deposits (direction='out' or transfer_type='deposit') add to cumulative
+            # Refunds (direction='in' or transfer_type='refund') subtract from cumulative
+            is_deposit = False
+            is_refund = False
+            
+            if transfer_type:
+                is_deposit = transfer_type.lower() == 'deposit'
+                is_refund = transfer_type.lower() == 'refund'
+            elif direction:
+                is_deposit = direction.lower() == 'out'  # User sent to contract = deposit
+                is_refund = direction.lower() == 'in'     # User received from contract = refund
+            
+            # Update cumulative net amount
+            if is_deposit:
+                cumulative += amount
+            elif is_refund:
+                cumulative -= amount
+            else:
+                # If we can't determine, default to adding (for backwards compatibility)
+                # But log a warning
+                cumulative += amount
             
             # Format timestamp for label - use blocktime_utc if available, otherwise convert from Unix timestamp
             if blocktime_utc:
