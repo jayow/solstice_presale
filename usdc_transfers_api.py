@@ -175,8 +175,8 @@ def save_transfer_to_db(transfer: Dict):
             blocktime_utc = dt_utc.replace(tzinfo=None)
         
         cur.execute("""
-            INSERT INTO transfers (transaction_id, source, blocktime, blocktime_utc, amount, direction)
-            VALUES (%s, %s, %s, %s, %s, %s)
+            INSERT INTO transfers (transaction_id, source, blocktime, blocktime_utc, amount, direction, signer, is_signer_account)
+            VALUES (%s, %s, %s, %s, %s, %s, %s, %s)
             ON CONFLICT (transaction_id) DO NOTHING
             RETURNING id;
         """, (
@@ -185,7 +185,9 @@ def save_transfer_to_db(transfer: Dict):
             timestamp or 0,
             blocktime_utc,
             transfer.get('amount', 0),
-            transfer.get('direction', '')
+            transfer.get('direction', ''),
+            transfer.get('signer', ''),
+            transfer.get('is_signer_account', False)
         ))
         
         conn.commit()
