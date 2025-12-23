@@ -915,7 +915,7 @@ def get_transfers():
         
         # Select specific columns to avoid issues
         # Only show transfers from presale start time onwards
-        query = "SELECT transaction_id, source, blocktime, blocktime_utc, amount, direction FROM transfers WHERE blocktime >= %s"
+        query = "SELECT transaction_id, source, blocktime, blocktime_utc, amount, direction, transfer_type, signer, is_signer_account FROM transfers WHERE blocktime >= %s"
         params = [PRESALE_START_TIMESTAMP]
         
         if source:
@@ -925,6 +925,11 @@ def get_transfers():
         if direction:
             query += " AND direction = %s"
             params.append(direction)
+        
+        transfer_type_filter = request.args.get('transfer_type', None)
+        if transfer_type_filter:
+            query += " AND transfer_type = %s"
+            params.append(transfer_type_filter)
         
         query += " ORDER BY blocktime DESC LIMIT %s OFFSET %s"
         params.extend([limit, offset])
