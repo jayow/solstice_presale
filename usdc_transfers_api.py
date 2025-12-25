@@ -644,7 +644,7 @@ def index():
         ensure_db_initialized()
     except Exception as e:
         return f"Database initialization error: {e}", 500
-    return send_file('usdc_dashboard.html')
+    return send_file('dashboard.html')
 
 
 @app.route('/temp-view')
